@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { VoiceTest } from "@/components/ai/voice-test";
 import { 
   Card, 
   CardContent, 
@@ -662,6 +663,16 @@ export default function Settings() {
                       <p className="text-sm text-slate-500">
                         All services are running normally. Last system check: {new Date().toLocaleTimeString()}
                       </p>
+                    </div>
+                    
+                    {/* Voice Test Component */}
+                    <div className="rounded-lg border p-4 mt-6">
+                      <h3 className="text-base font-medium mb-3">Voice System Test</h3>
+                      <p className="text-sm text-slate-500 mb-4">
+                        Use this tool to test speech synthesis capabilities in your browser. If you're having trouble with the voice assistant, 
+                        try the different speech synthesis methods below to troubleshoot.
+                      </p>
+                      <VoiceTest />
                     </div>
                   </div>
                 </CardContent>
