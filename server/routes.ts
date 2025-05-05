@@ -411,8 +411,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/repairs", async (req: Request, res: Response) => {
     try {
-      // Parse the incoming data
-      const data = insertRepairSchema.parse(req.body);
+      // Extract the data first to handle faultTypeName before validation
+      const requestData = req.body;
+      let faultTypeId = requestData.faultTypeId;
+      
+      // If faultTypeName is provided but no faultTypeId, try to create or find a fault type
+      if (requestData.faultTypeName && !faultTypeId) {
+        // Check if a fault type with this name already exists
+        const existingFaultTypes = await storage.getFaultTypes();
+        const matchingFaultType = existingFaultTypes.find(
+          ft => ft.name.toLowerCase() === requestData.faultTypeName.toLowerCase()
+        );
+        
+        if (matchingFaultType) {
+          // Use existing fault type
+          faultTypeId = matchingFaultType.id;
+        } else if (requestData.faultTypeName.trim()) {
+          // Create a new fault type if name is not empty
+          try {
+            const newFaultType = await storage.createFaultType({
+              name: requestData.faultTypeName,
+              description: null
+            });
+            faultTypeId = newFaultType.id;
+          } catch (err) {
+            console.error("Error creating new fault type:", err);
+          }
+        }
+        
+        // Update the request data with the found/created fault type ID
+        requestData.faultTypeId = faultTypeId;
+      }
+      
+      // Parse the incoming data with schema validation
+      const data = insertRepairSchema.parse(requestData);
       
       // Initialize status history with the initial status
       const initialStatus = data.status || 'Received';
@@ -441,7 +473,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/repairs/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const data = insertRepairSchema.parse(req.body);
+      
+      // Extract the data first to handle faultTypeName before validation
+      const requestData = req.body;
+      let faultTypeId = requestData.faultTypeId;
+      
+      // If faultTypeName is provided but no faultTypeId, try to create or find a fault type
+      if (requestData.faultTypeName && !faultTypeId) {
+        // Check if a fault type with this name already exists
+        const existingFaultTypes = await storage.getFaultTypes();
+        const matchingFaultType = existingFaultTypes.find(
+          ft => ft.name.toLowerCase() === requestData.faultTypeName.toLowerCase()
+        );
+        
+        if (matchingFaultType) {
+          // Use existing fault type
+          faultTypeId = matchingFaultType.id;
+        } else if (requestData.faultTypeName.trim()) {
+          // Create a new fault type if name is not empty
+          try {
+            const newFaultType = await storage.createFaultType({
+              name: requestData.faultTypeName,
+              description: null
+            });
+            faultTypeId = newFaultType.id;
+          } catch (err) {
+            console.error("Error creating new fault type:", err);
+          }
+        }
+        
+        // Update the request data with the found/created fault type ID
+        requestData.faultTypeId = faultTypeId;
+      }
+      
+      const data = insertRepairSchema.parse(requestData);
       const repair = await storage.updateRepair(id, data);
       
       if (!repair) {
@@ -450,6 +515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(repair);
     } catch (error) {
+      console.error("Error updating repair:", error);
       res.status(400).json({ error: "Invalid repair data" });
     }
   });

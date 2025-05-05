@@ -35,6 +35,8 @@ import { Separator } from "@/components/ui/separator";
 const repairFormSchema = insertRepairSchema.extend({
   inverterId: z.number().nullable().optional(),
   clientId: z.number().nullable().optional(), // Make clientId optional
+  faultTypeId: z.number().nullable().optional(), // Make faultTypeId optional
+  faultTypeName: z.string().optional(), // Add field for fault type text input
   faultDescription: z.string().min(1, "Fault description is required"),
   receivedDate: z.string().or(z.date()).transform((val) => 
     typeof val === 'string' ? new Date(val) : val
@@ -105,6 +107,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       inverterId: null,
       clientId: undefined,
       faultTypeId: undefined,
+      faultTypeName: "",
       faultDescription: "",
       status: "Received",
       receivedDate: new Date(),
@@ -182,6 +185,19 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
   const onSubmit = (data: RepairFormValues) => {
     // Calculate total cost based on labor and parts
     const totalCost = (data.laborHours || 0) * (data.laborRate || 85) + (data.totalPartsCost || 0);
+    
+    // If a fault type name is provided, try to find a matching fault type
+    if (data.faultTypeName && faultTypes) {
+      const matchingFaultType = faultTypes.find(
+        ft => ft.name.toLowerCase() === data.faultTypeName?.toLowerCase()
+      );
+      
+      if (matchingFaultType) {
+        data.faultTypeId = matchingFaultType.id; // Use existing fault type ID
+      }
+      // Note: If no match, we'll just send the text and let the server handle it
+    }
+    
     mutation.mutate({
       ...data,
       totalCost,
@@ -293,28 +309,22 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
 
               <FormField
                 control={form.control}
-                name="faultTypeId"
+                name="faultTypeName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fault Type</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(Number(value))}
-                      value={field.value?.toString()}
-                      disabled={isLoadingFaultTypes}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a fault type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {faultTypes?.map((faultType) => (
-                          <SelectItem key={faultType.id} value={faultType.id.toString()}>
-                            {faultType.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter fault type" 
+                        list="fault-types"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <datalist id="fault-types">
+                      {faultTypes?.map((faultType) => (
+                        <option key={faultType.id} value={faultType.name} />
+                      ))}
+                    </datalist>
                     <FormMessage />
                   </FormItem>
                 )}
