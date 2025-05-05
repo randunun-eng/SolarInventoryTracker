@@ -417,6 +417,44 @@ export default function Suppliers() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website URL</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <Input placeholder="https://supplier-website.com" className="pl-10" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="remarks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Remarks</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <FileText className="absolute left-3 top-3 text-slate-400" size={16} />
+                        <Textarea 
+                          placeholder="Additional notes about this supplier" 
+                          className="pl-10 resize-none min-h-[80px]" 
+                          {...field} 
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <DialogFooter className="mt-6">
                 <Button 
@@ -530,6 +568,44 @@ export default function Suppliers() {
                         <MapPin className="absolute left-3 top-3 text-slate-400" size={16} />
                         <Textarea 
                           placeholder="Enter supplier address" 
+                          className="pl-10 resize-none min-h-[80px]" 
+                          {...field} 
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website URL</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <Input placeholder="https://supplier-website.com" className="pl-10" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="remarks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Remarks</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <FileText className="absolute left-3 top-3 text-slate-400" size={16} />
+                        <Textarea 
+                          placeholder="Additional notes about this supplier" 
                           className="pl-10 resize-none min-h-[80px]" 
                           {...field} 
                         />

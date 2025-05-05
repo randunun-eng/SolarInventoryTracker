@@ -26,6 +26,8 @@ export const suppliers = pgTable("suppliers", {
   email: text("email"),
   phone: text("phone"),
   address: text("address"),
+  website: text("website"),
+  remarks: text("remarks"),
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).pick({
@@ -34,6 +36,8 @@ export const insertSupplierSchema = createInsertSchema(suppliers).pick({
   email: true,
   phone: true,
   address: true,
+  website: true,
+  remarks: true,
 });
 
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
