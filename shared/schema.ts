@@ -200,6 +200,9 @@ export const repairs = pgTable("repairs", {
   inverterSerialNumber: text("inverter_serial_number"),
   // Added field to store status history
   statusHistory: jsonb("status_history").array().default([]),
+  // New fields for remarks and priority
+  remarks: text("remarks"),
+  priority: text("priority").default("Medium"),
 });
 
 export const insertRepairSchema = createInsertSchema(repairs).pick({
@@ -222,6 +225,8 @@ export const insertRepairSchema = createInsertSchema(repairs).pick({
   inverterModel: true,
   inverterSerialNumber: true,
   statusHistory: true,
+  remarks: true,
+  priority: true,
 });
 
 export type InsertRepair = z.infer<typeof insertRepairSchema>;

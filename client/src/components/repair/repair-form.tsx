@@ -32,6 +32,8 @@ import { formatDateTime } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
 // Extend the insertRepairSchema with custom validations
+const PriorityEnum = z.enum(["Top", "Medium", "Low"]);
+
 const repairFormSchema = insertRepairSchema.extend({
   inverterId: z.number().nullable().optional(),
   clientId: z.number().nullable().optional(), // Make clientId optional
@@ -56,9 +58,11 @@ const repairFormSchema = insertRepairSchema.extend({
   status: z.string().refine((val) => Object.values(RepairStatusEnum.enum).includes(val as any), {
     message: "Invalid repair status",
   }),
-  // Additional fields for model and serial number
+  // Additional fields
   inverterModel: z.string().min(1, "Inverter model is required"),
   inverterSerialNumber: z.string().min(1, "Serial number is required"),
+  remarks: z.string().optional(), // Add optional remarks field
+  priority: z.string().optional(), // Add optional priority field
 });
 
 type RepairFormValues = z.infer<typeof repairFormSchema>;
@@ -123,6 +127,8 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       totalCost: 0,
       inverterModel: "",
       inverterSerialNumber: "",
+      remarks: "",
+      priority: "Medium", // Default priority
     },
   });
 
@@ -278,7 +284,26 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
           <CardContent className="pt-6">
             <h3 className="text-lg font-semibold mb-4">Repair Details</h3>
             
+            {/* First row: Received Date and Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <FormField
+                control={form.control}
+                name="receivedDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Received Date*</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 10) : ''}
+                        onChange={(e) => field.onChange(new Date(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="status"
@@ -300,6 +325,35 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                             {status}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            {/* Second row: Priority and Fault Type */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value)}
+                      value={field.value || "Medium"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Top">Top</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Low">Low</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -331,6 +385,27 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
               />
             </div>
 
+            {/* Remarks field (optional) */}
+            <FormField
+              control={form.control}
+              name="remarks"
+              render={({ field }) => (
+                <FormItem className="mb-4">
+                  <FormLabel>Remarks</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Add any additional remarks (optional)"
+                      className="resize-none"
+                      rows={2}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Fault Description */}
             <FormField
               control={form.control}
               name="faultDescription"
@@ -349,26 +424,9 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <FormField
-                control={form.control}
-                name="receivedDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Received Date*</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 10) : ''}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+            
+            {/* Estimated and Completion dates */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <FormField
                 control={form.control}
                 name="estimatedCompletionDate"
