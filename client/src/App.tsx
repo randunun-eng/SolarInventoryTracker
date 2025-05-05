@@ -13,6 +13,7 @@ import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
 import RepairStatus from "@/pages/repair-status";
 import { ChatBot } from "@/components/ai/chat-bot";
+import { VoiceTest } from "@/components/ai/voice-test";
 
 function Router() {
   return (

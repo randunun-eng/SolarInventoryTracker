@@ -150,11 +150,46 @@ export function ChatBot() {
       const cleanText = lastMessage.content.replace(/\*\*(.*?)\*\*/g, '$1')
                                           .replace(/\*(.*?)\*/g, '$1');
       
-      speak(cleanText);
+      console.log('Speaking message from chat-bot:', cleanText);
       
-      // Set a timeout for when speaking is complete (roughly based on content length)
-      const timeoutDuration = Math.max(2000, cleanText.length * 90); // ~90ms per character
+      // Backup direct speech synthesis if the hook method fails
+      try {
+        // Method 1: Try using our hook
+        speak(cleanText);
+        
+        // Method 2: Direct fallback method
+        if (window.speechSynthesis) {
+          // Create a new utterance
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          
+          // Set properties
+          utterance.volume = 1;
+          utterance.rate = 1;
+          utterance.pitch = 1;
+          
+          // Add event listeners
+          utterance.onstart = () => console.log('Direct speech started in chat-bot');
+          utterance.onend = () => {
+            console.log('Direct speech ended in chat-bot');
+            setIsSpeaking(false);
+          };
+          utterance.onerror = (e) => {
+            console.error('Direct speech error in chat-bot:', e);
+            setIsSpeaking(false);
+          };
+          
+          // Speak the text
+          window.speechSynthesis.speak(utterance);
+        }
+      } catch (error) {
+        console.error('Error starting speech in chat-bot:', error);
+        setIsSpeaking(false);
+      }
+      
+      // Set a fallback timeout in case speech events don't fire properly
+      const timeoutDuration = Math.max(5000, cleanText.length * 100);
       const timeout = setTimeout(() => {
+        console.log('Fallback timeout for speech ended');
         setIsSpeaking(false);
       }, timeoutDuration);
       
