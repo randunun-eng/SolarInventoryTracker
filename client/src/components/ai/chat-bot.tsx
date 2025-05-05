@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -57,6 +57,68 @@ export function ChatBot() {
     speak
   } = useVoiceFeatures();
 
+  // Define handleSendMessage early with useCallback
+  const handleSendMessage = useCallback(async () => {
+    if (!inputValue.trim() || isLoading) return;
+    
+    // If we're listening, stop listening first
+    if (isListening) {
+      stopListening();
+    }
+    
+    const userMessage: Message = {
+      id: Math.random().toString(36).substring(2, 15),
+      content: inputValue,
+      type: 'user',
+      timestamp: new Date(),
+    };
+    
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+    
+    try {
+      const response = await apiRequest<{ sessionId: string; response: string }>({
+        url: '/api/chat',
+        method: 'POST',
+        body: {
+          sessionId,
+          message: userMessage.content,
+          isVoiceMode: voiceMode,
+        },
+      });
+      
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: Math.random().toString(36).substring(2, 15),
+          content: response.response,
+          type: 'assistant',
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive',
+      });
+      
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: Math.random().toString(36).substring(2, 15),
+          content: 'Sorry, I encountered an error processing your request. Please try again.',
+          type: 'assistant',
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [inputValue, isLoading, isListening, sessionId, stopListening, voiceMode, toast]);
+
   // Initialize session ID
   useEffect(() => {
     if (!sessionId) {
@@ -73,9 +135,21 @@ export function ChatBot() {
   // Effect to handle speech transcript updates
   useEffect(() => {
     if (transcript && isListening) {
+      console.log('Updating input value with transcript:', transcript);
       setInputValue(transcript);
+      
+      // If we have a pause of 2 seconds in speech, auto-submit
+      const autoSubmitTimer = setTimeout(() => {
+        if (isListening && transcript.trim()) {
+          console.log('Auto-submitting after transcript pause');
+          stopListening();
+          handleSendMessage();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(autoSubmitTimer);
     }
-  }, [transcript, isListening]);
+  }, [transcript, isListening, stopListening, handleSendMessage]);
 
   // Effect to handle speaking of assistant responses
   useEffect(() => {
@@ -125,7 +199,7 @@ export function ChatBot() {
       
       toast({
         title: "Voice input active",
-        description: "Speak clearly and wait for 1.5s pause to auto-submit",
+        description: "Speak clearly and wait for 2s pause to auto-submit",
       });
     }
   };
@@ -146,67 +220,6 @@ export function ChatBot() {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
-    
-    // If we're listening, stop listening first
-    if (isListening) {
-      stopListening();
-    }
-    
-    const userMessage: Message = {
-      id: Math.random().toString(36).substring(2, 15),
-      content: inputValue,
-      type: 'user',
-      timestamp: new Date(),
-    };
-    
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
-    setInputValue('');
-    setIsLoading(true);
-    
-    try {
-      const response = await apiRequest<{ sessionId: string; response: string }>({
-        url: '/api/chat',
-        method: 'POST',
-        body: {
-          sessionId,
-          message: userMessage.content,
-          isVoiceMode: voiceMode, // Include voice mode status
-        },
-      });
-      
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          id: Math.random().toString(36).substring(2, 15),
-          content: response.response,
-          type: 'assistant',
-          timestamp: new Date(),
-        },
-      ]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to send message. Please try again.',
-        variant: 'destructive',
-      });
-      
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          id: Math.random().toString(36).substring(2, 15),
-          content: 'Sorry, I encountered an error processing your request. Please try again.',
-          type: 'assistant',
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -370,7 +383,7 @@ export function ChatBot() {
             {/* Listening status */}
             {isListening && (
               <div className="text-xs text-primary-foreground bg-primary px-2 py-1 rounded mt-1 animate-pulse">
-                Listening... Say your message clearly.
+                Listening... Say your message clearly. Auto-submits after 2s silence.
               </div>
             )}
             

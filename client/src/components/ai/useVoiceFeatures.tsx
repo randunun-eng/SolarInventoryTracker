@@ -142,11 +142,18 @@ export function useVoiceFeatures() {
       
       // Set a new silence timer if we have a callback
       if (autoSubmitCallback) {
+        console.log('Setting silence timer for auto-submit', transcript);
         const timer = setTimeout(() => {
+          console.log('Silence timer triggered. Transcript:', transcript, 'Has callback:', !!autoSubmitCallback);
           // If we have a transcript and 1.5 seconds has passed, auto-submit
           if (transcript.trim() && autoSubmitCallback) {
+            console.log('Auto-submitting voice command');
             internalStopListening();
-            autoSubmitCallback();
+            setTimeout(() => {
+              if (autoSubmitCallback) {
+                autoSubmitCallback();
+              }
+            }, 100);
           }
         }, 1500); // 1.5 seconds of silence triggers submission
         
