@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, type Content, type Part } from '@google/generative-ai';
 import { Request, Response } from 'express';
 import { storage } from './storage';
 
@@ -6,12 +6,13 @@ import { storage } from './storage';
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-interface ChatHistory {
+// Define chat message structure for Google AI
+interface ChatMessage {
   role: 'user' | 'model';
-  parts: string;
+  parts: Part[];
 }
 
-const chatSessions: Map<string, ChatHistory[]> = new Map();
+const chatSessions: Map<string, Content[]> = new Map();
 
 // Formats data for system context
 const getSystemContext = async () => {
@@ -58,7 +59,7 @@ For actions that modify data, always ask for confirmation.
 };
 
 // Process user query to determine intent and entities
-const processQuery = async (chatHistory: ChatHistory[], query: string) => {
+const processQuery = async (chatHistory: Content[], query: string) => {
   const systemContext = await getSystemContext();
   
   // Prepare the chat session with system context and history
@@ -108,7 +109,7 @@ const searchComponents = async (criteria: any) => {
     
     if (criteria.lowStock === true) {
       filteredComponents = filteredComponents.filter(
-        comp => comp.currentStock <= comp.minimumStock
+        comp => (comp.currentStock || 0) <= (comp.minimumStock || 0)
       );
     }
     
@@ -333,7 +334,7 @@ export const handleChatQuery = async (req: Request, res: Response) => {
     // Add user message to history
     chatHistory.push({
       role: 'user',
-      parts: message
+      parts: [{ text: message }]
     });
     
     // Process user query
@@ -342,7 +343,7 @@ export const handleChatQuery = async (req: Request, res: Response) => {
     // Add model response to history
     chatHistory.push({
       role: 'model',
-      parts: response
+      parts: [{ text: response }]
     });
     
     // Keep history limited to last 10 messages

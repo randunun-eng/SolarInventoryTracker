@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import { handleChatQuery, handleAiOperation } from "./ai-service";
 import { 
   insertCategorySchema, 
   insertSupplierSchema, 
@@ -462,6 +463,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const faultTypes = await storage.getCommonFaultTypes(limit);
     res.json(faultTypes);
   });
+  
+  // AI Chatbot Endpoints
+  app.post("/api/chat", handleChatQuery);
+  app.post("/api/ai-operation", handleAiOperation);
 
   const httpServer = createServer(app);
 
