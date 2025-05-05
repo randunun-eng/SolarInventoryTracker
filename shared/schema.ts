@@ -35,7 +35,6 @@ export const insertSupplierSchema = createInsertSchema(suppliers).pick({
   contactName: true,
   email: true,
   phone: true,
-  address: true,
   website: true,
   remarks: true,
 });

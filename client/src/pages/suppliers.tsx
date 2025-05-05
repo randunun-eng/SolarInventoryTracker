@@ -97,7 +97,6 @@ export default function Suppliers() {
       contactName: "",
       email: "",
       phone: "",
-      address: "",
       website: "",
       remarks: "",
     },
@@ -194,7 +193,6 @@ export default function Suppliers() {
       contactName: supplier.contactName || "",
       email: supplier.email || "",
       phone: supplier.phone || "",
-      address: supplier.address || "",
       website: supplier.website || "",
       remarks: supplier.remarks || "",
     });
