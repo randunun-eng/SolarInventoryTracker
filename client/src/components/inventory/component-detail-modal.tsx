@@ -166,6 +166,25 @@ export function ComponentDetailModal({
                   
                   <div className="pt-2 border-t border-slate-200">
                     <h4 className="text-sm font-medium text-slate-700 mb-2">Order from:</h4>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {supplier?.website && (
+                        <Button 
+                          asChild 
+                          size="sm" 
+                          variant="default"
+                          className="flex-1"
+                        >
+                          <a 
+                            href={supplier.website}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            <ShoppingCart className="mr-1 h-4 w-4" />
+                            {supplier.name}
+                          </a>
+                        </Button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       <Button 
                         asChild 

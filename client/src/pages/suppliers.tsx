@@ -271,6 +271,7 @@ export default function Suppliers() {
                     <TableHead>Contact Person</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
+                    <TableHead>Website</TableHead>
                     <TableHead>Address</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -282,6 +283,19 @@ export default function Suppliers() {
                       <TableCell>{supplier.contactName || "—"}</TableCell>
                       <TableCell>{supplier.email || "—"}</TableCell>
                       <TableCell>{supplier.phone || "—"}</TableCell>
+                      <TableCell>
+                        {supplier.website ? (
+                          <a 
+                            href={supplier.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline flex items-center"
+                          >
+                            <Globe className="h-4 w-4 mr-1" />
+                            Visit website
+                          </a>
+                        ) : "—"}
+                      </TableCell>
                       <TableCell className="max-w-xs truncate">{supplier.address || "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
