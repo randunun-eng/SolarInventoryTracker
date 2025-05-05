@@ -318,9 +318,30 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
             name="datasheet"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Datasheet URL</FormLabel>
+                <FormLabel>Datasheet</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter datasheet URL" {...field} />
+                  <div className="flex space-x-2">
+                    <div className="flex-1">
+                      <Input 
+                        placeholder="Enter datasheet URL" 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                      />
+                    </div>
+                    <div className="flex-shrink-0">
+                      <FileUpload
+                        label="Upload Datasheet"
+                        accept=".pdf,.doc,.docx"
+                        onUploadComplete={(urls) => {
+                          if (urls.length > 0) {
+                            field.onChange(urls[0]);
+                            setIsUploading(false);
+                          }
+                        }}
+                        currentFiles={field.value ? [field.value] : []}
+                      />
+                    </div>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -332,9 +353,31 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
             name="image"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Image URL</FormLabel>
+                <FormLabel>Image</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter image URL" {...field} />
+                  <div className="flex space-x-2">
+                    <div className="flex-1">
+                      <Input 
+                        placeholder="Enter image URL" 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                      />
+                    </div>
+                    <div className="flex-shrink-0">
+                      <FileUpload
+                        label="Upload Image"
+                        accept="image/*"
+                        onUploadComplete={(urls) => {
+                          if (urls.length > 0) {
+                            field.onChange(urls[0]);
+                            setIsUploading(false);
+                          }
+                        }}
+                        currentFiles={field.value ? [field.value] : []}
+                        isImage={true}
+                      />
+                    </div>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
