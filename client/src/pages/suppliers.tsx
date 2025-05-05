@@ -43,10 +43,10 @@ import {
   Truck,
   Mail,
   Phone,
-  MapPin,
   User,
   Globe,
-  FileText
+  FileText,
+  Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -78,7 +78,6 @@ export default function Suppliers() {
     contactName?: string;
     email?: string;
     phone?: string;
-    address?: string;
     website?: string;
     remarks?: string;
   } | null>(null);
@@ -182,7 +181,6 @@ export default function Suppliers() {
     contactName?: string;
     email?: string;
     phone?: string;
-    address?: string;
     website?: string;
     remarks?: string;
   }) => {
@@ -269,7 +267,6 @@ export default function Suppliers() {
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Website</TableHead>
-                    <TableHead>Address</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -293,7 +290,6 @@ export default function Suppliers() {
                           </a>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{supplier.address || "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button 
@@ -419,27 +415,6 @@ export default function Suppliers() {
                   </FormItem>
                 )}
               />
-              
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-3 text-slate-400" size={16} />
-                        <Textarea 
-                          placeholder="Enter supplier address" 
-                          className="pl-10 resize-none min-h-[80px]" 
-                          {...field} 
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}
@@ -489,12 +464,15 @@ export default function Suppliers() {
                 </Button>
                 <Button 
                   type="submit" 
+                  variant="default"
                   disabled={createSupplierMutation.isPending}
+                  className="gap-2"
                 >
                   {createSupplierMutation.isPending && 
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   }
-                  Create Supplier
+                  <Save className="h-4 w-4" />
+                  Save Supplier
                 </Button>
               </DialogFooter>
             </form>
@@ -579,27 +557,6 @@ export default function Suppliers() {
                   </FormItem>
                 )}
               />
-              
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-3 text-slate-400" size={16} />
-                        <Textarea 
-                          placeholder="Enter supplier address" 
-                          className="pl-10 resize-none min-h-[80px]" 
-                          {...field} 
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}
@@ -641,7 +598,7 @@ export default function Suppliers() {
               
               <DialogFooter className="mt-6">
                 <Button 
-                  type="button" 
+                  type="button"
                   variant="outline" 
                   onClick={() => setIsEditSupplierOpen(false)}
                 >
@@ -649,12 +606,15 @@ export default function Suppliers() {
                 </Button>
                 <Button 
                   type="submit" 
+                  variant="default"
                   disabled={updateSupplierMutation.isPending}
+                  className="gap-2"
                 >
                   {updateSupplierMutation.isPending && 
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   }
-                  Update Supplier
+                  <Save className="h-4 w-4" />
+                  Save Changes
                 </Button>
               </DialogFooter>
             </form>
