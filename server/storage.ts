@@ -706,4 +706,383 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { 
+  eq, 
+  and, 
+  lte, 
+  desc, 
+  count, 
+  sql, 
+  gt,
+  isNull
+} from "drizzle-orm";
+import { db } from "./db";
+import {
+  users,
+  categories,
+  suppliers,
+  components,
+  purchases,
+  clients,
+  inverters,
+  faultTypes,
+  repairs,
+  usedComponents
+} from "@shared/schema";
+
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+  
+  // Category Management
+  async getCategories(): Promise<Category[]> {
+    return db.select().from(categories);
+  }
+  
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category;
+  }
+  
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const [newCategory] = await db.insert(categories).values(category).returning();
+    return newCategory;
+  }
+  
+  async updateCategory(id: number, category: InsertCategory): Promise<Category | undefined> {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set(category)
+      .where(eq(categories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+  
+  // Supplier Management
+  async getSuppliers(): Promise<Supplier[]> {
+    return db.select().from(suppliers);
+  }
+  
+  async getSupplier(id: number): Promise<Supplier | undefined> {
+    const [supplier] = await db.select().from(suppliers).where(eq(suppliers.id, id));
+    return supplier;
+  }
+  
+  async createSupplier(supplier: InsertSupplier): Promise<Supplier> {
+    const [newSupplier] = await db.insert(suppliers).values(supplier).returning();
+    return newSupplier;
+  }
+  
+  async updateSupplier(id: number, supplier: InsertSupplier): Promise<Supplier | undefined> {
+    const [updatedSupplier] = await db
+      .update(suppliers)
+      .set(supplier)
+      .where(eq(suppliers.id, id))
+      .returning();
+    return updatedSupplier;
+  }
+  
+  // Component Management
+  async getComponents(): Promise<Component[]> {
+    return db.select().from(components);
+  }
+  
+  async getComponent(id: number): Promise<Component | undefined> {
+    const [component] = await db.select().from(components).where(eq(components.id, id));
+    return component;
+  }
+  
+  async createComponent(component: InsertComponent): Promise<Component> {
+    const [newComponent] = await db.insert(components).values(component).returning();
+    return newComponent;
+  }
+  
+  async updateComponent(id: number, component: InsertComponent): Promise<Component | undefined> {
+    const [updatedComponent] = await db
+      .update(components)
+      .set(component)
+      .where(eq(components.id, id))
+      .returning();
+    return updatedComponent;
+  }
+  
+  async updateComponentStock(id: number, quantity: number): Promise<Component | undefined> {
+    const [component] = await db.select().from(components).where(eq(components.id, id));
+    if (!component) return undefined;
+    
+    const currentStock = component.currentStock || 0;
+    const newStock = currentStock + quantity;
+    
+    const [updatedComponent] = await db
+      .update(components)
+      .set({ currentStock: newStock })
+      .where(eq(components.id, id))
+      .returning();
+    return updatedComponent;
+  }
+  
+  async getLowStockComponents(): Promise<Component[]> {
+    return db
+      .select()
+      .from(components)
+      .where(
+        sql`(${components.currentStock} <= ${components.minimumStock}) 
+            OR (${components.minimumStock} IS NULL AND ${components.currentStock} <= 10)`
+      );
+  }
+  
+  // Purchase Management
+  async getPurchases(): Promise<Purchase[]> {
+    return db.select().from(purchases);
+  }
+  
+  async getComponentPurchases(componentId: number): Promise<Purchase[]> {
+    return db
+      .select()
+      .from(purchases)
+      .where(eq(purchases.componentId, componentId));
+  }
+  
+  async createPurchase(purchase: InsertPurchase): Promise<Purchase> {
+    const [newPurchase] = await db.insert(purchases).values(purchase).returning();
+    
+    // Update component stock
+    await this.updateComponentStock(purchase.componentId, purchase.quantity);
+    
+    return newPurchase;
+  }
+  
+  // Client Management
+  async getClients(): Promise<Client[]> {
+    return db.select().from(clients);
+  }
+  
+  async getClient(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+  
+  async createClient(client: InsertClient): Promise<Client> {
+    const [newClient] = await db.insert(clients).values(client).returning();
+    return newClient;
+  }
+  
+  async updateClient(id: number, client: InsertClient): Promise<Client | undefined> {
+    const [updatedClient] = await db
+      .update(clients)
+      .set(client)
+      .where(eq(clients.id, id))
+      .returning();
+    return updatedClient;
+  }
+  
+  // Inverter Management
+  async getInverters(): Promise<Inverter[]> {
+    return db.select().from(inverters);
+  }
+  
+  async getInvertersByClient(clientId: number): Promise<Inverter[]> {
+    return db
+      .select()
+      .from(inverters)
+      .where(eq(inverters.clientId, clientId));
+  }
+  
+  async getInverter(id: number): Promise<Inverter | undefined> {
+    const [inverter] = await db.select().from(inverters).where(eq(inverters.id, id));
+    return inverter;
+  }
+  
+  async getInverterBySerialNumber(serialNumber: string): Promise<Inverter | undefined> {
+    const [inverter] = await db
+      .select()
+      .from(inverters)
+      .where(eq(inverters.serialNumber, serialNumber));
+    return inverter;
+  }
+  
+  async createInverter(inverter: InsertInverter): Promise<Inverter> {
+    const [newInverter] = await db.insert(inverters).values(inverter).returning();
+    return newInverter;
+  }
+  
+  async updateInverter(id: number, inverter: InsertInverter): Promise<Inverter | undefined> {
+    const [updatedInverter] = await db
+      .update(inverters)
+      .set(inverter)
+      .where(eq(inverters.id, id))
+      .returning();
+    return updatedInverter;
+  }
+  
+  // Fault Type Management
+  async getFaultTypes(): Promise<FaultType[]> {
+    return db.select().from(faultTypes);
+  }
+  
+  async getFaultType(id: number): Promise<FaultType | undefined> {
+    const [faultType] = await db.select().from(faultTypes).where(eq(faultTypes.id, id));
+    return faultType;
+  }
+  
+  async createFaultType(faultType: InsertFaultType): Promise<FaultType> {
+    const [newFaultType] = await db.insert(faultTypes).values(faultType).returning();
+    return newFaultType;
+  }
+  
+  // Repair Management
+  async getRepairs(): Promise<Repair[]> {
+    return db.select().from(repairs);
+  }
+  
+  async getRepairsByClient(clientId: number): Promise<Repair[]> {
+    return db
+      .select()
+      .from(repairs)
+      .where(eq(repairs.clientId, clientId));
+  }
+  
+  async getRepairsByInverter(inverterId: number): Promise<Repair[]> {
+    return db
+      .select()
+      .from(repairs)
+      .where(eq(repairs.inverterId, inverterId));
+  }
+  
+  async getRepair(id: number): Promise<Repair | undefined> {
+    const [repair] = await db.select().from(repairs).where(eq(repairs.id, id));
+    return repair;
+  }
+  
+  async createRepair(repair: InsertRepair): Promise<Repair> {
+    const [newRepair] = await db.insert(repairs).values(repair).returning();
+    return newRepair;
+  }
+  
+  async updateRepair(id: number, repair: InsertRepair): Promise<Repair | undefined> {
+    const [updatedRepair] = await db
+      .update(repairs)
+      .set(repair)
+      .where(eq(repairs.id, id))
+      .returning();
+    return updatedRepair;
+  }
+  
+  async getActiveRepairs(): Promise<Repair[]> {
+    return db
+      .select()
+      .from(repairs)
+      .where(
+        and(
+          sql`${repairs.status} != 'Completed'`,
+          sql`${repairs.status} != 'Cancelled'`
+        )
+      );
+  }
+  
+  async getRecentRepairs(limit: number): Promise<Repair[]> {
+    return db
+      .select()
+      .from(repairs)
+      .orderBy(desc(repairs.receivedDate))
+      .limit(limit);
+  }
+  
+  // Used Components Management
+  async getUsedComponentsByRepair(repairId: number): Promise<UsedComponent[]> {
+    return db
+      .select()
+      .from(usedComponents)
+      .where(eq(usedComponents.repairId, repairId));
+  }
+  
+  async createUsedComponent(usedComponent: InsertUsedComponent): Promise<UsedComponent> {
+    const [newUsedComponent] = await db.insert(usedComponents).values(usedComponent).returning();
+    
+    // Decrease component stock
+    await this.updateComponentStock(usedComponent.componentId, -usedComponent.quantity);
+    
+    return newUsedComponent;
+  }
+  
+  async getMostUsedComponents(limit: number): Promise<{componentId: number, componentName: string, totalUsed: number}[]> {
+    const result = await db
+      .select({
+        componentId: usedComponents.componentId,
+        totalUsed: sql<number>`sum(${usedComponents.quantity})`.as('totalUsed')
+      })
+      .from(usedComponents)
+      .groupBy(usedComponents.componentId)
+      .orderBy(desc(sql<number>`sum(${usedComponents.quantity})`))
+      .limit(limit);
+    
+    // Get component names
+    const componentNames = await Promise.all(
+      result.map(async (item) => {
+        const component = await this.getComponent(item.componentId);
+        return {
+          componentId: item.componentId,
+          componentName: component ? component.name : `Component #${item.componentId}`,
+          totalUsed: item.totalUsed
+        };
+      })
+    );
+    
+    return componentNames;
+  }
+  
+  async getCommonFaultTypes(limit: number): Promise<{faultTypeId: number, faultTypeName: string, percentage: number}[]> {
+    // Count total repairs with fault types
+    const [{ totalRepairs }] = await db
+      .select({
+        totalRepairs: count(repairs.id)
+      })
+      .from(repairs)
+      .where(sql`${repairs.faultTypeId} IS NOT NULL`);
+    
+    if (totalRepairs === 0) {
+      return [];
+    }
+    
+    // Count repairs by fault type
+    const faultTypeCounts = await db
+      .select({
+        faultTypeId: repairs.faultTypeId,
+        count: count(repairs.id)
+      })
+      .from(repairs)
+      .where(sql`${repairs.faultTypeId} IS NOT NULL`)
+      .groupBy(repairs.faultTypeId)
+      .orderBy(desc(count(repairs.id)))
+      .limit(limit);
+    
+    // Get fault type names and calculate percentages
+    const result = await Promise.all(
+      faultTypeCounts.map(async (item) => {
+        const faultType = await this.getFaultType(item.faultTypeId!);
+        return {
+          faultTypeId: item.faultTypeId!,
+          faultTypeName: faultType ? faultType.name : `Fault Type #${item.faultTypeId}`,
+          percentage: Math.round((item.count / totalRepairs) * 100)
+        };
+      })
+    );
+    
+    return result;
+  }
+}
+
+// Use the database implementation instead of memory storage
+export const storage = new DatabaseStorage();

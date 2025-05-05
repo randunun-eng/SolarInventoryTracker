@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, doublePrecision, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Categories for components
 export const categories = pgTable("categories", {
@@ -241,3 +242,81 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Define table relations
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  components: many(components),
+}));
+
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  components: many(components),
+  purchases: many(purchases),
+}));
+
+export const componentsRelations = relations(components, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [components.categoryId],
+    references: [categories.id],
+  }),
+  supplier: one(suppliers, {
+    fields: [components.supplierId],
+    references: [suppliers.id],
+  }),
+  purchases: many(purchases),
+  usedComponents: many(usedComponents),
+}));
+
+export const purchasesRelations = relations(purchases, ({ one }) => ({
+  component: one(components, {
+    fields: [purchases.componentId],
+    references: [components.id],
+  }),
+  supplier: one(suppliers, {
+    fields: [purchases.supplierId],
+    references: [suppliers.id],
+  }),
+}));
+
+export const clientsRelations = relations(clients, ({ many }) => ({
+  inverters: many(inverters),
+  repairs: many(repairs),
+}));
+
+export const invertersRelations = relations(inverters, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [inverters.clientId],
+    references: [clients.id],
+  }),
+  repairs: many(repairs),
+}));
+
+export const faultTypesRelations = relations(faultTypes, ({ many }) => ({
+  repairs: many(repairs),
+}));
+
+export const repairsRelations = relations(repairs, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [repairs.clientId],
+    references: [clients.id],
+  }),
+  inverter: one(inverters, {
+    fields: [repairs.inverterId],
+    references: [inverters.id],
+  }),
+  faultType: one(faultTypes, {
+    fields: [repairs.faultTypeId],
+    references: [faultTypes.id],
+  }),
+  usedComponents: many(usedComponents),
+}));
+
+export const usedComponentsRelations = relations(usedComponents, ({ one }) => ({
+  repair: one(repairs, {
+    fields: [usedComponents.repairId],
+    references: [repairs.id],
+  }),
+  component: one(components, {
+    fields: [usedComponents.componentId],
+    references: [components.id],
+  }),
+}));
