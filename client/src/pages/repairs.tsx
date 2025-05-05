@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { RepairForm } from "@/components/repair/repair-form";
 import { RepairDetailModal } from "@/components/repair/repair-detail-modal";
+import { UpdateProgressForm } from "@/components/repair/update-progress-form";
 import { Badge } from "@/components/ui/badge";
 import { 
   Loader2, 
@@ -49,6 +50,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { RepairStatusEnum } from "@shared/schema";
 
 export default function Repairs() {
   const { toast } = useToast();
@@ -60,6 +74,8 @@ export default function Repairs() {
   const [editingRepairId, setEditingRepairId] = useState<number | null>(null);
   const [viewingRepairId, setViewingRepairId] = useState<number | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [progressRepairId, setProgressRepairId] = useState<number | null>(null);
 
   // Fetch repairs
   const { data: repairs, isLoading: isLoadingRepairs } = useQuery({
@@ -153,6 +169,11 @@ export default function Repairs() {
     if (confirm("Are you sure you want to delete this repair record?")) {
       deleteRepairMutation.mutate(id);
     }
+  };
+  
+  const handleUpdateProgress = (id: number) => {
+    setProgressRepairId(id);
+    setIsProgressModalOpen(true);
   };
 
   return (
@@ -269,6 +290,14 @@ export default function Repairs() {
                               <span className="sr-only">Edit</span>
                             </Button>
                             <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUpdateProgress(repair.id)}
+                              className="mr-1 text-xs"
+                            >
+                              Update Progress
+                            </Button>
+                            <Button 
                               variant="ghost" 
                               size="icon"
                               onClick={() => window.open(`/api/repairs/${repair.id}/report`, '_blank')}
@@ -351,6 +380,32 @@ export default function Repairs() {
         onClose={() => setIsDetailModalOpen(false)}
         onEdit={handleEditRepair}
       />
+
+      {/* Update Progress Modal */}
+      <Dialog open={isProgressModalOpen} onOpenChange={setIsProgressModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Repair Progress</DialogTitle>
+            <DialogDescription>
+              Update the status and add notes about the progress of this repair.
+            </DialogDescription>
+          </DialogHeader>
+          <UpdateProgressForm 
+            repairId={progressRepairId || undefined} 
+            onSuccess={() => {
+              setIsProgressModalOpen(false);
+              queryClient.invalidateQueries({ queryKey: ["/api/repairs"] });
+              if (progressRepairId) {
+                queryClient.invalidateQueries({ queryKey: [`/api/repairs/${progressRepairId}`] });
+              }
+              toast({
+                title: "Progress updated",
+                description: "The repair progress has been updated successfully.",
+              });
+            }} 
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

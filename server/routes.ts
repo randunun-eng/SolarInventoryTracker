@@ -525,9 +525,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const schema = z.object({ 
         status: RepairStatusEnum,
-        note: z.string().optional()
+        notes: z.string(),
+        timestamp: z.string().optional()
       });
-      const { status, note } = schema.parse(req.body);
+      const { status, notes, timestamp } = schema.parse(req.body);
       
       const repair = await storage.getRepair(id);
       if (!repair) {
@@ -537,8 +538,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a status history entry
       const statusHistoryEntry: StatusHistoryEntry = {
         status,
-        timestamp: new Date(),
-        note: note || null,
+        timestamp: timestamp ? new Date(timestamp) : new Date(),
+        note: notes || null,
         userId: null, // Can be updated when authentication is implemented
         userName: null
       };
