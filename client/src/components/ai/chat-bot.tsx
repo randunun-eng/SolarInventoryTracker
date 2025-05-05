@@ -140,11 +140,28 @@ export function ChatBot() {
     }
   }, [transcript, isListening]);
 
+  // Track already spoken messages
+  const [spokenMessageIds, setSpokenMessageIds] = useState<Set<string>>(new Set());
+
   // Effect to handle speaking of assistant responses
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (voiceMode && lastMessage && lastMessage.type === 'assistant' && !isLoading && !isSpeaking) {
+    
+    // Only speak if:
+    // 1. Voice mode is on
+    // 2. The message is from the assistant
+    // 3. Not currently loading or speaking
+    // 4. The message hasn't been spoken before
+    if (voiceMode && 
+        lastMessage && 
+        lastMessage.type === 'assistant' && 
+        !isLoading && 
+        !isSpeaking && 
+        !spokenMessageIds.has(lastMessage.id)) {
+      
+      // Mark this message as being spoken
       setIsSpeaking(true);
+      setSpokenMessageIds(prev => new Set([...prev, lastMessage.id]));
       
       // Clean the text for speech (remove any markdown or special characters)
       const cleanText = lastMessage.content.replace(/\*\*(.*?)\*\*/g, '$1')
@@ -152,13 +169,12 @@ export function ChatBot() {
       
       console.log('Speaking message from chat-bot:', cleanText);
       
-      // Backup direct speech synthesis if the hook method fails
-      try {
-        // Method 1: Try using our hook
-        speak(cleanText);
-        
-        // Method 2: Direct fallback method
-        if (window.speechSynthesis) {
+      // Use only the direct speech method for better reliability
+      if (window.speechSynthesis) {
+        try {
+          // Cancel any ongoing speech first
+          window.speechSynthesis.cancel();
+          
           // Create a new utterance
           const utterance = new SpeechSynthesisUtterance(cleanText);
           
@@ -180,9 +196,13 @@ export function ChatBot() {
           
           // Speak the text
           window.speechSynthesis.speak(utterance);
+        } catch (error) {
+          console.error('Error starting speech in chat-bot:', error);
+          setIsSpeaking(false);
         }
-      } catch (error) {
-        console.error('Error starting speech in chat-bot:', error);
+      } else {
+        // If speech synthesis isn't available, just mark as done
+        console.error('Speech synthesis not supported');
         setIsSpeaking(false);
       }
       
@@ -195,7 +215,7 @@ export function ChatBot() {
       
       return () => clearTimeout(timeout);
     }
-  }, [messages, voiceMode, isLoading, isSpeaking, speak]);
+  }, [messages, voiceMode, isLoading, isSpeaking, spokenMessageIds]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
