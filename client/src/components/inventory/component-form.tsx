@@ -69,6 +69,7 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
     resolver: zodResolver(componentFormSchema),
     defaultValues: component || {
       name: "",
+      partNumber: "",
       categoryId: undefined,
       description: "",
       datasheet: "",
@@ -129,7 +130,7 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="name"
@@ -138,6 +139,20 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
                 <FormLabel>Component Name*</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter component name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="partNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Package Type</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., TO-220, SOP-8, DIP-8" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
