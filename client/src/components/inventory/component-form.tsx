@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -84,7 +84,7 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
   });
 
   // Update form values when component data is loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (component) {
       form.reset(component);
     }
