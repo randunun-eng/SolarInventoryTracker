@@ -512,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI Chatbot Endpoints
   app.post("/api/chat", handleChatQuery);
-  app.post("/api/ai-operation", handleAiOperation);
+  app.post("/api/ai/operation", handleAiOperation);
 
   const httpServer = createServer(app);
 

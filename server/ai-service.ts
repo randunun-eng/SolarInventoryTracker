@@ -436,6 +436,141 @@ export const handleChatQuery = async (req: Request, res: Response) => {
 };
 
 // Handle data operations requested by AI
+// Analyze datasheet content using AI
+export const analyzeDatasheet = async (datasheetUrl: string, componentName: string) => {
+  // If no model is available, return a graceful error message
+  if (!model) {
+    console.error('AI model not available for datasheet analysis.');
+    throw new Error('AI service is currently unavailable. Please check your API key configuration.');
+  }
+  
+  try {
+    // For PDF analysis, we'd normally extract the text first
+    // For this example, we're simulating by passing the URL and component name
+    
+    const prompt = `
+You are a technical component analyst that specializes in electronic components.
+Please analyze the datasheet for the component "${componentName}" at URL: ${datasheetUrl}
+
+Extract the following information in a structured JSON format:
+1. Key specifications
+2. Package type
+3. Operating parameters (voltage, current, temperature range)
+4. Common applications
+5. Alternative/compatible components that could be used as replacements
+6. Common issues or failure modes
+
+If you cannot access the actual datasheet content using the URL, provide educated technical information about typical components with this name based on your knowledge.
+
+Format your response as valid JSON with the following structure:
+{
+  "specifications": { ... },
+  "package": "...",
+  "operatingParameters": { ... },
+  "applications": [ ... ],
+  "alternatives": [ ... ],
+  "commonIssues": [ ... ],
+  "technicalNotes": "..."
+}
+`;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    try {
+      // Try to parse the response as JSON
+      const jsonStart = responseText.indexOf('{');
+      const jsonEnd = responseText.lastIndexOf('}') + 1;
+      
+      if (jsonStart >= 0 && jsonEnd > jsonStart) {
+        const jsonString = responseText.substring(jsonStart, jsonEnd);
+        return JSON.parse(jsonString);
+      } else {
+        // If not JSON, return the text as is
+        return { 
+          technicalNotes: responseText,
+          error: "Response was not in expected JSON format"
+        };
+      }
+    } catch (parseError) {
+      console.error('Error parsing AI response as JSON:', parseError);
+      return { 
+        technicalNotes: responseText,
+        error: "Failed to parse JSON response"
+      };
+    }
+  } catch (error) {
+    console.error('Error analyzing datasheet:', error);
+    throw error;
+  }
+};
+
+// Find alternative components when out of stock
+export const findAlternativeComponents = async (componentName: string, specifications: any) => {
+  // If no model is available, return a graceful error message
+  if (!model) {
+    console.error('AI model not available for component search.');
+    throw new Error('AI service is currently unavailable. Please check your API key configuration.');
+  }
+  
+  try {
+    const prompt = `
+You are a technical component advisor for an electronic repair shop.
+The shop is looking for alternatives to the component "${componentName}" with these specifications:
+${JSON.stringify(specifications, null, 2)}
+
+Please provide:
+1. At least 3 alternative components that could work as replacements
+2. The key differences between each alternative and the original
+3. Any adjustments needed when using these alternatives
+4. Where these components might be commonly available
+
+Format your response as valid JSON with the following structure:
+{
+  "alternatives": [
+    {
+      "name": "...",
+      "manufacturer": "...",
+      "keyDifferences": [ ... ],
+      "adjustmentsNeeded": "...",
+      "availabilityNotes": "..."
+    }
+  ],
+  "generalAdvice": "..."
+}
+`;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    try {
+      // Try to parse the response as JSON
+      const jsonStart = responseText.indexOf('{');
+      const jsonEnd = responseText.lastIndexOf('}') + 1;
+      
+      if (jsonStart >= 0 && jsonEnd > jsonStart) {
+        const jsonString = responseText.substring(jsonStart, jsonEnd);
+        return JSON.parse(jsonString);
+      } else {
+        // If not JSON, return the text as is
+        return { 
+          generalAdvice: responseText,
+          error: "Response was not in expected JSON format"
+        };
+      }
+    } catch (parseError) {
+      console.error('Error parsing AI response as JSON:', parseError);
+      return { 
+        generalAdvice: responseText,
+        error: "Failed to parse JSON response"
+      };
+    }
+  } catch (error) {
+    console.error('Error finding alternative components:', error);
+    throw error;
+  }
+};
+
 export const handleAiOperation = async (req: Request, res: Response) => {
   try {
     const { operation, params } = req.body;
@@ -487,6 +622,20 @@ export const handleAiOperation = async (req: Request, res: Response) => {
           throw new Error('Missing report type');
         }
         result = await generateReportData(params.reportType);
+        break;
+      
+      case 'analyzeDatasheet':
+        if (!params.datasheetUrl || !params.componentName) {
+          throw new Error('Missing datasheet URL or component name');
+        }
+        result = await analyzeDatasheet(params.datasheetUrl, params.componentName);
+        break;
+        
+      case 'findAlternativeComponents':
+        if (!params.componentName) {
+          throw new Error('Missing component name');
+        }
+        result = await findAlternativeComponents(params.componentName, params.specifications || {});
         break;
       
       default:
