@@ -154,24 +154,66 @@ export function ComponentDetailModal({
                   </div>
                 )}
                 
-                <div className="flex justify-end space-x-3">
+                <div className="flex flex-col space-y-4">
                   <Button 
                     variant="outline"
                     onClick={() => componentId && onEdit(componentId)}
+                    className="self-end"
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
-                  <Button asChild>
-                    <a 
-                      href="https://www.digikey.com" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Order More
-                    </a>
-                  </Button>
+                  
+                  <div className="pt-2 border-t border-slate-200">
+                    <h4 className="text-sm font-medium text-slate-700 mb-2">Order from:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        asChild 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <a 
+                          href={`https://www.alibaba.com/trade/search?SearchText=${encodeURIComponent(component.name)}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                        >
+                          <ShoppingCart className="mr-1 h-4 w-4" />
+                          Alibaba
+                        </a>
+                      </Button>
+                      <Button 
+                        asChild 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <a 
+                          href={`https://www.aliexpress.com/wholesale?SearchText=${encodeURIComponent(component.name)}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                        >
+                          <ShoppingCart className="mr-1 h-4 w-4" />
+                          AliExpress
+                        </a>
+                      </Button>
+                      <Button 
+                        asChild 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <a 
+                          href={`https://s.taobao.com/search?q=${encodeURIComponent(component.name)}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                        >
+                          <ShoppingCart className="mr-1 h-4 w-4" />
+                          Taobao
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
