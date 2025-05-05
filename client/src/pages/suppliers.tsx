@@ -60,7 +60,6 @@ const supplierFormSchema = insertSupplierSchema.extend({
   contactName: z.string().optional().or(z.literal("")),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  address: z.string().optional().or(z.literal("")),
   website: z.string().url("Invalid URL format").optional().or(z.literal("")),
   remarks: z.string().optional().or(z.literal("")),
 });
