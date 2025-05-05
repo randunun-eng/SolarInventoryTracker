@@ -31,9 +31,9 @@ import FileUpload from "@/components/common/file-upload";
 // Extend the insertComponentSchema with custom validations
 const componentFormSchema = insertComponentSchema.extend({
   name: z.string().min(1, "Component name is required"),
-  minimumStock: z.number().int().min(0, "Minimum stock cannot be negative"),
-  currentStock: z.number().int().min(0, "Current stock cannot be negative"),
-  supplierPrice: z.number().min(0, "Price cannot be negative"),
+  minimumStock: z.number().int().min(0, "Minimum stock cannot be negative").nullable().optional(),
+  currentStock: z.number().int().min(0, "Current stock cannot be negative").nullable().optional(),
+  supplierPrice: z.number().min(0, "Price cannot be negative").nullable().optional(),
 });
 
 type ComponentFormValues = z.infer<typeof componentFormSchema>;
@@ -234,8 +234,11 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
                   <Input
                     type="number"
                     min="0"
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    value={field.value}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === '' ? 0 : parseInt(value));
+                    }}
+                    value={isNaN(field.value) ? 0 : field.value}
                   />
                 </FormControl>
                 <FormMessage />
@@ -253,8 +256,11 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
                   <Input
                     type="number"
                     min="0"
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    value={field.value}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === '' ? 0 : parseInt(value));
+                    }}
+                    value={isNaN(field.value) ? 0 : field.value}
                   />
                 </FormControl>
                 <FormMessage />
@@ -273,8 +279,11 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
                     type="number"
                     step="0.01"
                     min="0"
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    value={field.value}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === '' ? 0 : parseFloat(value));
+                    }}
+                    value={isNaN(field.value) ? 0 : field.value}
                   />
                 </FormControl>
                 <FormMessage />
