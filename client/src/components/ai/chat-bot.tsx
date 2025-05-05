@@ -112,14 +112,31 @@ export function ChatBot() {
   const toggleVoiceInput = () => {
     if (isListening) {
       stopListening();
+      // If we have input after stopping, send the message
+      if (inputValue.trim()) {
+        setTimeout(() => handleSendMessage(), 300);
+      }
     } else {
+      // Clear any existing input before starting to listen
+      setInputValue('');
       startListening();
-      // Auto-submit after a pause in speaking
-      setTimeout(() => {
-        if (inputValue.trim()) {
-          handleSendMessage();
+      
+      toast({
+        title: "Voice input active",
+        description: "Speak clearly and I'll listen for your command",
+      });
+      
+      // Set auto-submit timer
+      const timer = setTimeout(() => {
+        if (isListening) {
+          stopListening();
+          if (inputValue.trim()) {
+            handleSendMessage();
+          }
         }
-      }, 3000);
+      }, 5000); // Auto-submit after 5 seconds of speaking
+      
+      return () => clearTimeout(timer);
     }
   };
 
@@ -168,6 +185,7 @@ export function ChatBot() {
         body: {
           sessionId,
           message: userMessage.content,
+          isVoiceMode: voiceMode, // Include voice mode status
         },
       });
       
