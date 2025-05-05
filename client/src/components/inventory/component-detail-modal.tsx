@@ -163,10 +163,14 @@ export function ComponentDetailModal({
                     Edit
                   </Button>
                   <Button asChild>
-                    <Link href="/suppliers">
+                    <a 
+                      href="https://www.digikey.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
                       <ShoppingCart className="mr-2 h-4 w-4" />
                       Order More
-                    </Link>
+                    </a>
                   </Button>
                 </div>
               </div>
