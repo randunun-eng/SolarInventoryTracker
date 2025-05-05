@@ -11,6 +11,7 @@ import Suppliers from "@/pages/suppliers";
 import StockAlerts from "@/pages/stock-alerts";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
+import RepairStatus from "@/pages/repair-status";
 import { ChatBot } from "@/components/ai/chat-bot";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/stockalerts" component={StockAlerts} />
       <Route path="/clients" component={Clients} />
       <Route path="/repairs" component={Repairs} />
+      <Route path="/repairs/:id/status" component={RepairStatus} />
       <Route path="/invoices" component={Invoices} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />

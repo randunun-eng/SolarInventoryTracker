@@ -142,6 +142,29 @@ export function InteractiveStatusTimeline({
   repairId,
   className
 }: InteractiveStatusTimelineProps) {
+  // Get the current status index
+  const currentStatusIndex = getStatusIndex(currentStatus);
+  
+  // Helper to check if a status has been completed
+  const isStatusCompleted = (statusKey: string) => {
+    const statusIndex = getStatusIndex(statusKey);
+    return statusIndex < currentStatusIndex;
+  };
+  
+  // Helper to check if a status is the current one
+  const isCurrentStatus = (statusKey: string) => {
+    return statusKey === currentStatus;
+  };
+  
+  // Find the timestamp for a specific status from history
+  const getStatusTimestamp = (statusKey: string) => {
+    const historyEntry = statusHistory.find(entry => entry.status === statusKey);
+    if (!historyEntry) return null;
+    
+    const timestamp = new Date(historyEntry.timestamp);
+    return timestamp.toLocaleString();
+  };
+  
   // Handle status click for updates
   const handleStatusClick = (statusKey: string) => {
     if (!editable || !onStatusChange) return;
