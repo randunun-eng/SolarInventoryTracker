@@ -297,11 +297,11 @@ export default function Repairs() {
               <Wrench className="h-12 w-12 text-slate-300 mb-3" />
               <h3 className="text-lg font-medium text-slate-900 mb-1">No repairs found</h3>
               <p className="text-sm text-slate-500 mb-4">
-                {searchTerm || statusFilter
+                {searchTerm || (statusFilter && statusFilter !== "all")
                   ? "Try adjusting your search or filter criteria"
                   : "Start by creating your first repair log"}
               </p>
-              {!searchTerm && !statusFilter && (
+              {!searchTerm && (!statusFilter || statusFilter === "all") && (
                 <Button 
                   variant="default" 
                   onClick={() => setIsAddRepairOpen(true)}
