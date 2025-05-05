@@ -55,10 +55,10 @@ function SidebarLink({ href, icon: Icon, label }: SidebarLinkProps) {
 
   return (
     <Link href={href}>
-      <a className={cn("sidebar-link", isActive && "active")}>
+      <div className={cn("sidebar-link", isActive && "active")}>
         <Icon className="w-5 mr-2" size={18} />
         <span>{label}</span>
-      </a>
+      </div>
     </Link>
   );
 }
