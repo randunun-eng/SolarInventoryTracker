@@ -101,12 +101,12 @@ export default function Invoices() {
   // Filtered invoices based on search term and filters
   const filteredInvoices = invoices ? invoices.filter(invoice => {
     // Apply status filter if set
-    if (statusFilter && invoice.status !== statusFilter) {
+    if (statusFilter && statusFilter !== "all" && invoice.status !== statusFilter) {
       return false;
     }
 
     // Apply date range filter if set
-    if (dateRange) {
+    if (dateRange && dateRange !== "allTime") {
       const invoiceDate = new Date(invoice.date).getTime();
       const now = new Date().getTime();
       
@@ -267,7 +267,7 @@ export default function Invoices() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="Paid">Paid</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
                   <SelectItem value="Overdue">Overdue</SelectItem>
@@ -284,7 +284,7 @@ export default function Invoices() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Time</SelectItem>
+                  <SelectItem value="allTime">All Time</SelectItem>
                   <SelectItem value="last30">Last 30 Days</SelectItem>
                   <SelectItem value="last90">Last 90 Days</SelectItem>
                   <SelectItem value="thisYear">This Year</SelectItem>
@@ -375,11 +375,11 @@ export default function Invoices() {
               <FileText className="h-12 w-12 text-slate-300 mb-3" />
               <h3 className="text-lg font-medium text-slate-900 mb-1">No invoices found</h3>
               <p className="text-sm text-slate-500 mb-4">
-                {searchTerm || statusFilter || dateRange
+                {searchTerm || (statusFilter && statusFilter !== "all") || (dateRange && dateRange !== "allTime")
                   ? "Try adjusting your search or filter criteria"
                   : "Start by creating your first invoice"}
               </p>
-              {!searchTerm && !statusFilter && !dateRange && (
+              {!searchTerm && (!statusFilter || statusFilter === "all") && (!dateRange || dateRange === "allTime") && (
                 <Button 
                   variant="default" 
                   onClick={() => setIsCreateInvoiceOpen(true)}

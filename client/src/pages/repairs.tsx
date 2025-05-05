@@ -98,7 +98,7 @@ export default function Repairs() {
   // Filtered repairs based on search term and status filter
   const filteredRepairs = repairs ? repairs.filter(repair => {
     // Apply status filter if set
-    if (statusFilter && repair.status !== statusFilter) {
+    if (statusFilter && statusFilter !== "all" && repair.status !== statusFilter) {
       return false;
     }
 
