@@ -179,7 +179,7 @@ export type StatusHistoryEntry = z.infer<typeof statusHistoryEntrySchema>;
 // Repair Logs
 export const repairs = pgTable("repairs", {
   id: serial("id").primaryKey(),
-  inverterId: integer("inverter_id").notNull(),
+  inverterId: integer("inverter_id"),
   clientId: integer("client_id").notNull(),
   faultTypeId: integer("fault_type_id"),
   faultDescription: text("fault_description"),
@@ -195,6 +195,9 @@ export const repairs = pgTable("repairs", {
   afterPhotos: text("after_photos").array(),
   totalPartsCost: doublePrecision("total_parts_cost").default(0),
   totalCost: doublePrecision("total_cost").default(0),
+  // Added fields for inverter model and serial number
+  inverterModel: text("inverter_model"),
+  inverterSerialNumber: text("inverter_serial_number"),
   // Added field to store status history
   statusHistory: jsonb("status_history").array().default([]),
 });
@@ -216,6 +219,8 @@ export const insertRepairSchema = createInsertSchema(repairs).pick({
   afterPhotos: true,
   totalPartsCost: true,
   totalCost: true,
+  inverterModel: true,
+  inverterSerialNumber: true,
   statusHistory: true,
 });
 
