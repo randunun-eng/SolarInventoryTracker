@@ -317,10 +317,49 @@ const generateReportData = async (reportType: string) => {
   }
 };
 
+// Process voice commands and optimize response for speech
+const processVoiceCommand = async (chatHistory: Content[], command: string) => {
+  const systemContext = `
+You are an AI assistant for a Solar Inverter Repair Management System.
+The user is interacting with you using voice commands, so keep your responses concise and easily speakable.
+Format your responses for speaking aloud with these guidelines:
+1. Keep sentences short and simple
+2. Avoid complex lists or tables which would be hard to understand when spoken
+3. Use natural conversational language
+4. Include pauses where appropriate (use commas)
+5. Avoid special characters or formatting that would be difficult to speak
+
+When responding to voice commands, prioritize:
+- Brevity: Keep responses under 4 sentences when possible
+- Clarity: Use simple language
+- Actionability: When an action is needed, make it very clear
+- Context: Remind the user what they asked about in your answer
+
+For most requests about the system, give one concise, informative answer.
+`;
+
+  // Prepare the chat session with system context and history
+  const chat = model.startChat({
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 800,
+    },
+  });
+  
+  try {
+    // Send the query to the model
+    const result = await chat.sendMessage(systemContext + '\n\nUser voice command: ' + command);
+    return result.response.text();
+  } catch (error) {
+    console.error('Error processing voice command:', error);
+    return 'Sorry, I could not process your voice command. Please try again.';
+  }
+};
+
 // Express handler for chat endpoint
 export const handleChatQuery = async (req: Request, res: Response) => {
   try {
-    const { sessionId, message } = req.body;
+    const { sessionId, message, isVoiceMode } = req.body;
     
     if (!sessionId || !message) {
       return res.status(400).json({
@@ -337,8 +376,10 @@ export const handleChatQuery = async (req: Request, res: Response) => {
       parts: [{ text: message }]
     });
     
-    // Process user query
-    const response = await processQuery(chatHistory, message);
+    // Process user query - use voice-optimized processing if in voice mode
+    const response = isVoiceMode 
+      ? await processVoiceCommand(chatHistory, message)
+      : await processQuery(chatHistory, message);
     
     // Add model response to history
     chatHistory.push({
