@@ -52,6 +52,9 @@ const repairFormSchema = insertRepairSchema.extend({
   status: z.string().refine((val) => Object.values(RepairStatusEnum.enum).includes(val as any), {
     message: "Invalid repair status",
   }),
+  // Additional fields for model and serial number
+  inverterModel: z.string().min(1, "Inverter model is required"),
+  inverterSerialNumber: z.string().min(1, "Serial number is required"),
 });
 
 type RepairFormValues = z.infer<typeof repairFormSchema>;
@@ -113,6 +116,8 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       afterPhotos: [],
       totalPartsCost: 0,
       totalCost: 0,
+      inverterModel: "",
+      inverterSerialNumber: "",
     },
   });
 
@@ -244,6 +249,34 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="inverterModel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Inverter Model*</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter inverter model" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="inverterSerialNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Serial Number*</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter serial number" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
