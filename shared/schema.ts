@@ -181,6 +181,8 @@ export const repairs = pgTable("repairs", {
   afterPhotos: text("after_photos").array(),
   totalPartsCost: doublePrecision("total_parts_cost").default(0),
   totalCost: doublePrecision("total_cost").default(0),
+  // Added field to store status history
+  statusHistory: jsonb("status_history").array().default([]),
 });
 
 export const insertRepairSchema = createInsertSchema(repairs).pick({
@@ -200,6 +202,7 @@ export const insertRepairSchema = createInsertSchema(repairs).pick({
   afterPhotos: true,
   totalPartsCost: true,
   totalCost: true,
+  statusHistory: true,
 });
 
 export type InsertRepair = z.infer<typeof insertRepairSchema>;
