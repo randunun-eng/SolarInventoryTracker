@@ -119,24 +119,14 @@ export function ChatBot() {
     } else {
       // Clear any existing input before starting to listen
       setInputValue('');
-      startListening();
+      
+      // Start listening with auto-submit callback
+      startListening(handleSendMessage);
       
       toast({
         title: "Voice input active",
-        description: "Speak clearly and I'll listen for your command",
+        description: "Speak clearly and wait for 1.5s pause to auto-submit",
       });
-      
-      // Set auto-submit timer
-      const timer = setTimeout(() => {
-        if (isListening) {
-          stopListening();
-          if (inputValue.trim()) {
-            handleSendMessage();
-          }
-        }
-      }, 5000); // Auto-submit after 5 seconds of speaking
-      
-      return () => clearTimeout(timer);
     }
   };
 

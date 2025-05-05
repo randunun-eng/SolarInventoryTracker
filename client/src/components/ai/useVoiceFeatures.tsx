@@ -100,6 +100,27 @@ export function useVoiceFeatures() {
   }, []);
 
   // Configure recognition settings
+  // Add state for speech detection
+  const [silenceTimer, setSilenceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [lastSpeechTime, setLastSpeechTime] = useState<number>(0);
+  const [autoSubmitCallback, setAutoSubmitCallback] = useState<(() => void) | null>(null);
+  
+  // Function to clear silence timer
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      setSilenceTimer(null);
+    }
+  }, [silenceTimer]);
+  
+  // Define stop function outside useEffect
+  const internalStopListening = useCallback(() => {
+    if (recognition) {
+      recognition.stop();
+      setIsListening(false);
+    }
+  }, [recognition]);
+
   useEffect(() => {
     if (!recognition) return;
 
@@ -112,25 +133,60 @@ export function useVoiceFeatures() {
       const result = event.results[current];
       const transcript = result[0].transcript;
       setTranscript(transcript);
+      
+      // Update the last time speech was detected
+      setLastSpeechTime(Date.now());
+      
+      // Clear any existing silence timer
+      clearSilenceTimer();
+      
+      // Set a new silence timer if we have a callback
+      if (autoSubmitCallback) {
+        const timer = setTimeout(() => {
+          // If we have a transcript and 1.5 seconds has passed, auto-submit
+          if (transcript.trim() && autoSubmitCallback) {
+            internalStopListening();
+            autoSubmitCallback();
+          }
+        }, 1500); // 1.5 seconds of silence triggers submission
+        
+        setSilenceTimer(timer);
+      }
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      
+      // Clear silence timer if it exists
+      clearSilenceTimer();
+      
+      // Check if we should auto-submit on end
+      if (transcript.trim() && autoSubmitCallback && Date.now() - lastSpeechTime < 2000) {
+        autoSubmitCallback();
+      }
     };
 
     recognition.onerror = (event) => {
       console.error('Speech recognition error', event);
       setIsListening(false);
+      
+      // Clear silence timer if it exists
+      clearSilenceTimer();
     };
-  }, [recognition]);
+  }, [recognition, clearSilenceTimer, transcript, autoSubmitCallback, lastSpeechTime]);
 
   // Start listening
-  const startListening = useCallback(() => {
+  const startListening = useCallback((submitCallback?: () => void) => {
     if (!recognition) return;
     
     setTranscript('');
     recognition.start();
     setIsListening(true);
+    
+    // Set the callback if provided
+    if (submitCallback) {
+      setAutoSubmitCallback(() => submitCallback);
+    }
   }, [recognition]);
 
   // Stop listening
@@ -139,7 +195,16 @@ export function useVoiceFeatures() {
     
     recognition.stop();
     setIsListening(false);
-  }, [recognition]);
+    
+    // Clear the auto-submit callback
+    setAutoSubmitCallback(null);
+    
+    // Clear any existing silence timer
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      setSilenceTimer(null);
+    }
+  }, [recognition, silenceTimer]);
 
   // Speak text
   const speak = useCallback((text: string) => {
