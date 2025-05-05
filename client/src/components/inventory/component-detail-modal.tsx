@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
@@ -161,9 +162,11 @@ export function ComponentDetailModal({
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
-                  <Button>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Order More
+                  <Button asChild>
+                    <Link href="/suppliers">
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Order More
+                    </Link>
                   </Button>
                 </div>
               </div>
