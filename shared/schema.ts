@@ -162,6 +162,17 @@ export const RepairStatusEnum = z.enum([
 
 export type RepairStatus = z.infer<typeof RepairStatusEnum>;
 
+// Status History Entry Schema
+export const statusHistoryEntrySchema = z.object({
+  status: RepairStatusEnum,
+  timestamp: z.date(),
+  note: z.string().nullable(),
+  userId: z.number().nullable(),
+  userName: z.string().nullable(),
+});
+
+export type StatusHistoryEntry = z.infer<typeof statusHistoryEntrySchema>;
+
 // Repair Logs
 export const repairs = pgTable("repairs", {
   id: serial("id").primaryKey(),

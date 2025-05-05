@@ -13,7 +13,10 @@ import {
   insertFaultTypeSchema,
   insertRepairSchema,
   insertUsedComponentSchema,
-  RepairStatusEnum
+  RepairStatusEnum,
+  statusHistoryEntrySchema,
+  type StatusHistoryEntry,
+  type RepairStatus
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -389,10 +392,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/repairs", async (req: Request, res: Response) => {
     try {
+      // Parse the incoming data
       const data = insertRepairSchema.parse(req.body);
-      const repair = await storage.createRepair(data);
+      
+      // Initialize status history with the initial status
+      const initialStatus = data.status || 'Received';
+      const initialEntry: StatusHistoryEntry = {
+        status: initialStatus as z.infer<typeof RepairStatusEnum>,
+        timestamp: new Date(),
+        note: 'Repair created',
+        userId: null,
+        userName: null
+      };
+      
+      // Create the repair with status history
+      const repair = await storage.createRepair({
+        ...data,
+        status: initialStatus,
+        statusHistory: [initialEntry]
+      });
+      
       res.status(201).json(repair);
     } catch (error) {
+      console.error("Error creating repair:", error);
       res.status(400).json({ error: "Invalid repair data" });
     }
   });
@@ -416,17 +438,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/repairs/:id/status", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const schema = z.object({ status: RepairStatusEnum });
-      const { status } = schema.parse(req.body);
+      const schema = z.object({ 
+        status: RepairStatusEnum,
+        note: z.string().optional()
+      });
+      const { status, note } = schema.parse(req.body);
       
       const repair = await storage.getRepair(id);
       if (!repair) {
         return res.status(404).json({ message: "Repair not found" });
       }
       
-      const updatedRepair = await storage.updateRepair(id, { ...repair, status });
+      // Create a status history entry
+      const statusHistoryEntry: StatusHistoryEntry = {
+        status,
+        timestamp: new Date(),
+        note: note || null,
+        userId: null, // Can be updated when authentication is implemented
+        userName: null
+      };
+      
+      // Get existing status history or initialize empty array
+      const statusHistory = Array.isArray(repair.statusHistory) 
+        ? [...repair.statusHistory, statusHistoryEntry]
+        : [statusHistoryEntry];
+      
+      // Update the repair with new status and history
+      const updatedRepair = await storage.updateRepair(id, { 
+        ...repair, 
+        status,
+        statusHistory
+      });
+      
       res.json(updatedRepair);
     } catch (error) {
+      console.error("Error updating repair status:", error);
       res.status(400).json({ error: "Invalid status data" });
     }
   });
