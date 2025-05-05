@@ -68,13 +68,12 @@ export default function ComponentAnalysis({ componentId, componentName, datashee
       setDatasheetData(data.result);
       toast({
         title: "Datasheet analysis complete",
-        description: "Successfully analyzed component specifications",
       });
     },
     onError: (error) => {
+      console.error("Datasheet analysis error:", error);
       toast({
         title: "Analysis failed",
-        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
@@ -95,13 +94,12 @@ export default function ComponentAnalysis({ componentId, componentName, datashee
       setAlternativesData(data.result);
       toast({
         title: "Alternatives found",
-        description: "Successfully found alternative components",
       });
     },
     onError: (error) => {
+      console.error("Alternative search error:", error);
       toast({
         title: "Search failed",
-        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
     }
@@ -114,7 +112,6 @@ export default function ComponentAnalysis({ componentId, componentName, datashee
     if (!datasheetUrl) {
       toast({
         title: "Missing datasheet",
-        description: "Please add a datasheet URL to the component before analyzing",
         variant: "destructive",
       });
       return;
@@ -126,7 +123,6 @@ export default function ComponentAnalysis({ componentId, componentName, datashee
     if (!datasheetData) {
       toast({
         title: "Analyze datasheet first",
-        description: "Please analyze the datasheet before searching for alternatives",
         variant: "destructive",
       });
       return;
@@ -188,9 +184,6 @@ export default function ComponentAnalysis({ componentId, componentName, datashee
                       <AlertTriangle className="mr-2 h-5 w-5" />
                       Analysis Warning
                     </CardTitle>
-                    <CardDescription>
-                      There was an issue with the datasheet analysis
-                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p>{datasheetData.error}</p>
@@ -207,9 +200,9 @@ export default function ComponentAnalysis({ componentId, componentName, datashee
                   <Card>
                     <CardHeader>
                       <CardTitle>Specifications</CardTitle>
-                      <CardDescription>
+                      <div className="text-sm text-muted-foreground mt-1">
                         Package Type: {datasheetData.package || "Not specified"}
-                      </CardDescription>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
@@ -316,9 +309,6 @@ export default function ComponentAnalysis({ componentId, componentName, datashee
                       <AlertTriangle className="mr-2 h-5 w-5" />
                       Search Warning
                     </CardTitle>
-                    <CardDescription>
-                      There was an issue finding alternative components
-                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p>{alternativesData.error}</p>
