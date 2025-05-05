@@ -24,7 +24,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Camera, Upload, Cloud } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import FileUpload from "@/components/common/file-upload";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,19 +43,9 @@ const repairFormSchema = insertRepairSchema.extend({
   receivedDate: z.string().or(z.date()).transform((val) => 
     typeof val === 'string' ? new Date(val) : val
   ),
-  estimatedCompletionDate: z
-    .string()
-    .or(z.date())
-    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
-    .optional()
-    .nullable(),
-  completionDate: z
-    .string()
-    .or(z.date())
-    .transform((val) => (typeof val === 'string' ? new Date(val) : val))
-    .optional()
-    .nullable(),
-  status: z.string().refine((val) => Object.values(RepairStatusEnum.enum).includes(val as any), {
+  // Remove estimated and completion date fields
+  status: z.string().optional().nullable().refine(
+    (val) => !val || Object.values(RepairStatusEnum.enum).includes(val as any), {
     message: "Invalid repair status",
   }),
   // Additional fields
@@ -63,6 +53,7 @@ const repairFormSchema = insertRepairSchema.extend({
   inverterSerialNumber: z.string().min(1, "Serial number is required"),
   remarks: z.string().optional(), // Add optional remarks field
   priority: z.string().optional(), // Add optional priority field
+  repairPhotos: z.array(z.string()).optional().default([]), // New field for repair photos
 });
 
 type RepairFormValues = z.infer<typeof repairFormSchema>;
@@ -76,6 +67,8 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [photoUploadMethod, setPhotoUploadMethod] = useState<'camera' | 'file' | null>(null);
 
   // Fetch repair data if editing
   const { data: repair, isLoading: isLoadingRepair } = useQuery({
@@ -156,6 +149,74 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       setSelectedClientId(watchClientId);
     }
   }, [watchClientId]);
+  
+  // Set up camera access
+  const openCamera = () => {
+    setPhotoUploadMethod('camera');
+    // In a real implementation, this would use the device camera API
+    toast({
+      title: "Camera Access",
+      description: "Camera access would be requested here.",
+    });
+  };
+  
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    // Limit to 3 photos
+    if (photos.length >= 3) {
+      toast({
+        title: "Maximum photos reached",
+        description: "You can only upload up to 3 photos.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    // In a real implementation, this would upload the file to a server
+    // For now, we'll create a data URL for preview
+    const file = files[0];
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      if (e.target && e.target.result) {
+        const dataUrl = e.target.result as string;
+        setPhotos(prev => [...prev, dataUrl]);
+        
+        // Update form value
+        const currentPhotos = form.getValues("repairPhotos") || [];
+        form.setValue("repairPhotos", [...currentPhotos, dataUrl]);
+      }
+      setIsUploading(false);
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: "Upload failed",
+        description: "Failed to read the image file.",
+        variant: "destructive"
+      });
+      setIsUploading(false);
+    };
+    
+    reader.readAsDataURL(file);
+  };
+  
+  // Remove a photo
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    
+    // Update form value
+    const currentPhotos = form.getValues("repairPhotos") || [];
+    form.setValue(
+      "repairPhotos", 
+      currentPhotos.filter((_, i) => i !== index)
+    );
+  };
 
   // Create or update repair mutation
   const mutation = useMutation({
@@ -309,10 +370,10 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status*</FormLabel>
+                    <FormLabel>Status</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(value)}
-                      value={field.value}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -425,44 +486,108 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
               )}
             />
             
-            {/* Estimated and Completion dates */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <FormField
-                control={form.control}
-                name="estimatedCompletionDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estimated Completion Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 10) : ''}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="completionDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Completion Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 10) : ''}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* Photo Upload Section */}
+            <FormField
+              control={form.control}
+              name="repairPhotos"
+              render={({ field }) => (
+                <FormItem className="mt-6">
+                  <FormLabel>Pictures (Maximum 3)</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-1 gap-4">
+                      {/* Only show upload area if less than 3 photos */}
+                      {photos.length < 3 && (
+                        <div className="border border-dashed rounded-md p-6 text-center">
+                          <div className="flex flex-col items-center space-y-2">
+                            <Camera className="h-8 w-8 text-muted-foreground" />
+                            <div className="flex flex-col items-center">
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Drag & drop photos here, or click to upload
+                              </p>
+                              <div className="flex flex-wrap justify-center gap-2">
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={openCamera}
+                                  disabled={isUploading}
+                                >
+                                  <Camera className="h-4 w-4 mr-2" />
+                                  Use Camera
+                                </Button>
+                                
+                                <label className="cursor-pointer">
+                                  <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="sm"
+                                    disabled={isUploading}
+                                    onClick={() => document.getElementById('photo-upload')?.click()}
+                                  >
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Upload File
+                                  </Button>
+                                  <input
+                                    id="photo-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleFileUpload}
+                                    disabled={isUploading}
+                                  />
+                                </label>
+                                
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    toast({
+                                      title: "Google Drive",
+                                      description: "Google Drive integration would be implemented here."
+                                    });
+                                  }}
+                                  disabled={isUploading}
+                                >
+                                  <Cloud className="h-4 w-4 mr-2" />
+                                  Google Drive
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Display uploaded photos */}
+                      {photos.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                          {photos.map((photo, index) => (
+                            <div key={index} className="relative group">
+                              <img 
+                                src={photo} 
+                                alt={`Repair photo ${index + 1}`} 
+                                className="h-40 w-full object-cover rounded-md border"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => removePhoto(index)}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 
