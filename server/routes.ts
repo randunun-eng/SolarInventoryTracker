@@ -111,6 +111,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(components);
   });
   
+  app.get("/api/components/low-stock", async (req: Request, res: Response) => {
+    try {
+      const components = await storage.getLowStockComponents();
+      res.json(components);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch low stock components" });
+    }
+  });
+  
   app.get("/api/components/:id", async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const component = await storage.getComponent(id);
@@ -182,15 +191,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedComponent);
     } catch (error) {
       res.status(400).json({ error: "Invalid minimum stock update data" });
-    }
-  });
-  
-  app.get("/api/components/low-stock", async (req: Request, res: Response) => {
-    try {
-      const components = await storage.getLowStockComponents();
-      res.json(components);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch low stock components" });
     }
   });
   
