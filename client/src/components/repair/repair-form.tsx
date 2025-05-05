@@ -34,6 +34,7 @@ import { Separator } from "@/components/ui/separator";
 // Extend the insertRepairSchema with custom validations
 const repairFormSchema = insertRepairSchema.extend({
   inverterId: z.number().nullable().optional(),
+  clientId: z.number().nullable().optional(), // Make clientId optional
   faultDescription: z.string().min(1, "Fault description is required"),
   receivedDate: z.string().or(z.date()).transform((val) => 
     typeof val === 'string' ? new Date(val) : val
@@ -202,7 +203,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                 name="clientId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client*</FormLabel>
+                    <FormLabel>Client</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(Number(value))}
                       value={field.value?.toString()}
