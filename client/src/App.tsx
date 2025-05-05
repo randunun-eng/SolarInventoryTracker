@@ -11,6 +11,7 @@ import Suppliers from "@/pages/suppliers";
 import StockAlerts from "@/pages/stock-alerts";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
+import { ChatBot } from "@/components/ai/chat-bot";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function App() {
     <TooltipProvider>
       <Layout>
         <Router />
+        <ChatBot />
       </Layout>
     </TooltipProvider>
   );
