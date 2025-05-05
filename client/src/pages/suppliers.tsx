@@ -44,7 +44,9 @@ import {
   Mail,
   Phone,
   MapPin,
-  User
+  User,
+  Globe,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -59,6 +61,8 @@ const supplierFormSchema = insertSupplierSchema.extend({
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
+  website: z.string().url("Invalid URL format").optional().or(z.literal("")),
+  remarks: z.string().optional().or(z.literal("")),
 });
 
 type SupplierFormValues = z.infer<typeof supplierFormSchema>;
@@ -76,6 +80,8 @@ export default function Suppliers() {
     email?: string;
     phone?: string;
     address?: string;
+    website?: string;
+    remarks?: string;
   } | null>(null);
 
   // Fetch suppliers
@@ -92,6 +98,8 @@ export default function Suppliers() {
       email: "",
       phone: "",
       address: "",
+      website: "",
+      remarks: "",
     },
   });
 
@@ -177,6 +185,8 @@ export default function Suppliers() {
     email?: string;
     phone?: string;
     address?: string;
+    website?: string;
+    remarks?: string;
   }) => {
     setEditingSupplier(supplier);
     form.reset({
@@ -185,6 +195,8 @@ export default function Suppliers() {
       email: supplier.email || "",
       phone: supplier.phone || "",
       address: supplier.address || "",
+      website: supplier.website || "",
+      remarks: supplier.remarks || "",
     });
     setIsEditSupplierOpen(true);
   };
