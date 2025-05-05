@@ -132,24 +132,13 @@ export function ChatBot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Effect to handle speech transcript updates
+  // Effect to handle speech transcript updates - just update the input value
   useEffect(() => {
     if (transcript && isListening) {
       console.log('Updating input value with transcript:', transcript);
       setInputValue(transcript);
-      
-      // If we have a pause of 2 seconds in speech, auto-submit
-      const autoSubmitTimer = setTimeout(() => {
-        if (isListening && transcript.trim()) {
-          console.log('Auto-submitting after transcript pause');
-          stopListening();
-          handleSendMessage();
-        }
-      }, 2000);
-      
-      return () => clearTimeout(autoSubmitTimer);
     }
-  }, [transcript, isListening, stopListening, handleSendMessage]);
+  }, [transcript, isListening]);
 
   // Effect to handle speaking of assistant responses
   useEffect(() => {
@@ -183,6 +172,7 @@ export function ChatBot() {
     }
   };
 
+  // Toggle voice input
   const toggleVoiceInput = () => {
     if (isListening) {
       stopListening();
@@ -194,12 +184,12 @@ export function ChatBot() {
       // Clear any existing input before starting to listen
       setInputValue('');
       
-      // Start listening with auto-submit callback
-      startListening(handleSendMessage);
+      // Start listening but don't auto-submit
+      startListening();
       
       toast({
         title: "Voice input active",
-        description: "Speak clearly and wait for 2s pause to auto-submit",
+        description: "Speak clearly. Press the mic button again to submit.",
       });
     }
   };
@@ -383,7 +373,7 @@ export function ChatBot() {
             {/* Listening status */}
             {isListening && (
               <div className="text-xs text-primary-foreground bg-primary px-2 py-1 rounded mt-1 animate-pulse">
-                Listening... Say your message clearly. Auto-submits after 2s silence.
+                Listening... Say your message clearly. Press the microphone button again to submit.
               </div>
             )}
             
