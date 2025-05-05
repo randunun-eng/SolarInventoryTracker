@@ -166,9 +166,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.patch("/api/components/:id/min-stock", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const schema = z.object({ minimumStock: z.number().int().min(0) });
+      const { minimumStock } = schema.parse(req.body);
+      
+      const component = await storage.getComponent(id);
+      if (!component) {
+        return res.status(404).json({ message: "Component not found" });
+      }
+      
+      const updatedComponent = await storage.updateComponent(id, { ...component, minimumStock });
+      
+      res.json(updatedComponent);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid minimum stock update data" });
+    }
+  });
+  
   app.get("/api/components/low-stock", async (req: Request, res: Response) => {
-    const components = await storage.getLowStockComponents();
-    res.json(components);
+    try {
+      const components = await storage.getLowStockComponents();
+      res.json(components);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch low stock components" });
+    }
   });
   
   // Purchases
