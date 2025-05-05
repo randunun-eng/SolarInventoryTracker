@@ -4,7 +4,22 @@ import { storage } from './storage';
 
 // Initialize the Google AI client
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+// Initialize AI model with fallback options
+let model;
+try {
+  // Try to use gemini-1.5-pro first
+  model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+} catch (error) {
+  console.warn('Failed to initialize gemini-1.5-pro, falling back to gemini-pro');
+  try {
+    // Fall back to gemini-pro
+    model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  } catch (fallbackError) {
+    console.error('Failed to initialize AI models:', fallbackError);
+    // We'll handle the null model case in our processing functions
+  }
+}
 
 // Define chat message structure for Google AI
 interface ChatMessage {
@@ -60,23 +75,29 @@ For actions that modify data, always ask for confirmation.
 
 // Process user query to determine intent and entities
 const processQuery = async (chatHistory: Content[], query: string) => {
+  // If no model is available, return a graceful error message
+  if (!model) {
+    console.error('AI model not available. API key might be missing or invalid.');
+    return 'I\'m sorry, but the AI service is currently unavailable. Please check your API key configuration.';
+  }
+  
   const systemContext = await getSystemContext();
   
-  // Prepare the chat session with system context and history
-  const chat = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      maxOutputTokens: 1000,
-    },
-  });
-  
   try {
+    // Prepare the chat session with system context and history
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: {
+        maxOutputTokens: 1000,
+      },
+    });
+    
     // Send the query to the model
     const result = await chat.sendMessage(systemContext + '\n\nUser question: ' + query);
     return result.response.text();
   } catch (error) {
     console.error('Error processing chat query:', error);
-    return 'Sorry, I encountered an error processing your question. Please try again.';
+    return 'Sorry, I encountered an error processing your question. Please try again with a different question or check the API key configuration.';
   }
 };
 
@@ -319,6 +340,12 @@ const generateReportData = async (reportType: string) => {
 
 // Process voice commands and optimize response for speech
 const processVoiceCommand = async (chatHistory: Content[], command: string) => {
+  // If no model is available, return a graceful error message
+  if (!model) {
+    console.error('AI model not available for voice command. API key might be missing or invalid.');
+    return 'I\'m sorry, but the voice assistant is currently unavailable. Please check your API key configuration.';
+  }
+  
   const systemContext = `
 You are an AI assistant for a Solar Inverter Repair Management System.
 The user is interacting with you using voice commands, so keep your responses concise and easily speakable.
@@ -338,21 +365,21 @@ When responding to voice commands, prioritize:
 For most requests about the system, give one concise, informative answer.
 `;
 
-  // Prepare the chat session with system context and history
-  const chat = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      maxOutputTokens: 800,
-    },
-  });
-  
   try {
+    // Prepare the chat session with system context and history
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: {
+        maxOutputTokens: 800,
+      },
+    });
+    
     // Send the query to the model
     const result = await chat.sendMessage(systemContext + '\n\nUser voice command: ' + command);
     return result.response.text();
   } catch (error) {
     console.error('Error processing voice command:', error);
-    return 'Sorry, I could not process your voice command. Please try again.';
+    return 'Sorry, I could not process your voice command. Please try again with a different question or check your API key.';
   }
 };
 
