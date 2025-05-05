@@ -132,16 +132,77 @@ export function ChatBot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Effect to handle speech transcript updates - just update the input value
+  // Track last speech timestamp for auto-submission
+  const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState<number>(0);
+  const autoSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Function to check for command keywords
+  const checkForCommandKeywords = (text: string): boolean => {
+    const submitKeywords = [
+      "submit", 
+      "send", 
+      "go ahead", 
+      "execute", 
+      "process that", 
+      "done speaking", 
+      "that's all"
+    ];
+    
+    const lowercaseText = text.toLowerCase();
+    return submitKeywords.some(keyword => lowercaseText.includes(keyword));
+  };
+  
+  // Auto-submit after a pause in speech
+  const setupAutoSubmitTimeout = () => {
+    // Clear any existing timeout
+    if (autoSubmitTimeoutRef.current) {
+      clearTimeout(autoSubmitTimeoutRef.current);
+    }
+    
+    // Set new timeout - will submit if no new speech after 2.5 seconds
+    autoSubmitTimeoutRef.current = setTimeout(() => {
+      if (isListening && inputValue.trim().length > 10) {
+        console.log('Auto-submitting after speech pause');
+        stopListening();
+        handleSendMessage();
+      }
+    }, 2500);
+  };
+  
+  // Effect to handle speech transcript updates - update input value and check for auto-submit
   useEffect(() => {
     if (transcript && isListening) {
       console.log('Updating input value with transcript:', transcript);
       setInputValue(transcript);
+      
+      // Update speech timestamp
+      setLastSpeechTimestamp(Date.now());
+      
+      // Check for command keywords that trigger immediate submission
+      if (checkForCommandKeywords(transcript)) {
+        console.log('Command keyword detected, auto-submitting message');
+        stopListening();
+        // Small delay to ensure final words are captured
+        setTimeout(() => handleSendMessage(), 300);
+        return;
+      }
+      
+      // Set up auto-submit timeout
+      setupAutoSubmitTimeout();
     }
   }, [transcript, isListening]);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSubmitTimeoutRef.current) {
+        clearTimeout(autoSubmitTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Track already spoken messages
-  const [spokenMessageIds, setSpokenMessageIds] = useState<Set<string>>(new Set());
+  const [spokenMessageIds, setSpokenMessageIds] = useState<Set<string>>(new Set<string>());
 
   // Effect to handle speaking of assistant responses
   useEffect(() => {
@@ -161,7 +222,11 @@ export function ChatBot() {
       
       // Mark this message as being spoken
       setIsSpeaking(true);
-      setSpokenMessageIds(prev => new Set([...prev, lastMessage.id]));
+      setSpokenMessageIds(prev => {
+        const newSet = new Set<string>(prev);
+        newSet.add(lastMessage.id);
+        return newSet;
+      });
       
       // Clean the text for speech (remove any markdown or special characters)
       const cleanText = lastMessage.content.replace(/\*\*(.*?)\*\*/g, '$1')
