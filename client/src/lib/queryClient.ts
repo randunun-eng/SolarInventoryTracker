@@ -7,15 +7,13 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest<T = any>({
-  url,
-  method,
-  body,
-}: {
-  url: string;
-  method: string;
-  body?: unknown;
-}): Promise<T> {
+export async function apiRequest<T = any>(
+  method: string,
+  url: string,
+  body?: unknown
+): Promise<T> {
+  console.log(`Making API request: ${method} ${url}`, body);
+  
   const res = await fetch(url, {
     method,
     headers: body ? { "Content-Type": "application/json" } : {},
