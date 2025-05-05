@@ -108,7 +108,6 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       faultDescription: "",
       status: "Received",
       receivedDate: new Date(),
-      estimatedCompletionDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
       completionDate: null,
       laborHours: 0,
       laborRate: 85,
@@ -116,6 +115,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       technicianNotes: "",
       beforePhotos: [],
       afterPhotos: [],
+      repairPhotos: [],
       totalPartsCost: 0,
       totalCost: 0,
       inverterModel: "",
@@ -131,13 +131,14 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       form.reset({
         ...repair,
         receivedDate: new Date(repair.receivedDate),
-        estimatedCompletionDate: repair.estimatedCompletionDate 
-          ? new Date(repair.estimatedCompletionDate) 
-          : null,
         completionDate: repair.completionDate 
           ? new Date(repair.completionDate) 
           : null,
       });
+      // Set photos from the repair data
+      if (repair.repairPhotos && repair.repairPhotos.length > 0) {
+        setPhotos(repair.repairPhotos);
+      }
       setSelectedClientId(repair.clientId);
     }
   }, [repair, form]);
@@ -250,8 +251,13 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
   });
 
   const onSubmit = (data: RepairFormValues) => {
+    // Set default values for labor fields that were removed from UI
+    const laborHours = 0;
+    const laborRate = 85;
+    const totalPartsCost = 0;
+    
     // Calculate total cost based on labor and parts
-    const totalCost = (data.laborHours || 0) * (data.laborRate || 85) + (data.totalPartsCost || 0);
+    const totalCost = (laborHours) * (laborRate) + (totalPartsCost);
     
     // If a fault type name is provided, try to find a matching fault type
     if (data.faultTypeName && faultTypes) {
@@ -267,7 +273,12 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
     
     mutation.mutate({
       ...data,
+      laborHours,
+      laborRate,
+      totalPartsCost,
       totalCost,
+      technicianName: "",
+      technicianNotes: "",
     });
   };
 
@@ -591,106 +602,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold mb-4">Labor & Technician Information</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <FormField
-                control={form.control}
-                name="laborHours"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Labor Hours</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.5"
-                        min="0"
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                        value={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={form.control}
-                name="laborRate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Labor Rate ($/hr)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                        value={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="totalPartsCost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parts Cost ($)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                        value={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="technicianName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Technician Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter technician name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="technicianNotes"
-              render={({ field }) => (
-                <FormItem className="mt-4">
-                  <FormLabel>Technician Notes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Add any repair notes or observations"
-                      className="resize-none"
-                      rows={4}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
 
         <div className="flex justify-end space-x-2 pt-4">
           <Button
