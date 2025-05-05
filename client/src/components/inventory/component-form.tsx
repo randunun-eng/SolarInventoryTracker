@@ -122,7 +122,18 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
   });
 
   const onSubmit = (data: ComponentFormValues) => {
-    mutation.mutate(data);
+    console.log("Form submitted with data:", data);
+    
+    // Ensure numeric fields are not undefined or null for API request
+    const processedData = {
+      ...data,
+      minimumStock: data.minimumStock ?? 0,
+      currentStock: data.currentStock ?? 0,
+      supplierPrice: data.supplierPrice ?? 0
+    };
+    
+    console.log("Processed data for API:", processedData);
+    mutation.mutate(processedData);
   };
 
   const isLoading = isLoadingComponent || isLoadingCategories || isLoadingSuppliers || mutation.isPending || isUploading;

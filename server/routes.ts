@@ -137,10 +137,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/components", async (req: Request, res: Response) => {
     try {
-      const data = insertComponentSchema.parse(req.body);
+      // Process the form data to ensure it has all required fields with defaults
+      const formData = {
+        ...req.body,
+        minimumStock: req.body.minimumStock ?? 0,
+        currentStock: req.body.currentStock ?? 0,
+        supplierPrice: req.body.supplierPrice ?? 0,
+        partNumber: req.body.partNumber || null,
+        categoryId: req.body.categoryId || null,
+        description: req.body.description || null,
+        datasheet: req.body.datasheet || null,
+        image: req.body.image || null,
+        location: req.body.location || null,
+        supplierId: req.body.supplierId || null,
+        lastPurchaseDate: req.body.lastPurchaseDate || null
+      };
+      
+      console.log("Processed component data:", formData);
+      
+      const data = insertComponentSchema.parse(formData);
       const component = await storage.createComponent(data);
       res.status(201).json(component);
     } catch (error) {
+      console.error("Error creating component:", error);
       res.status(400).json({ error: "Invalid component data" });
     }
   });

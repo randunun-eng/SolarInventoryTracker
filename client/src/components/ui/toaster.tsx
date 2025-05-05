@@ -43,7 +43,7 @@ export function Toaster() {
                 <ToastDescription>{description}</ToastDescription>
               )}
             </div>
-            {action}
+            {/* Don't directly render the action, ensure it doesn't contain invalid nesting */}
             <ToastClose />
           </Toast>
         )
