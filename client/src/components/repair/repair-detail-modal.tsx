@@ -254,7 +254,18 @@ export function RepairDetailModal({
                     onClick={() => repairId && onEdit(repairId)}
                   >
                     <Edit className="mr-2 h-4 w-4" />
-                    Update Status
+                    Edit Repair
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (repairId) {
+                        window.location.href = `/repairs/${repairId}/status`;
+                      }
+                    }}
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    Status Timeline
                   </Button>
                   {repair.status !== "Completed" && (
                     <Button onClick={() => {/* Handle completion */}}>

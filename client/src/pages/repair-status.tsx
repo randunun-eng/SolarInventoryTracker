@@ -20,8 +20,29 @@ export default function RepairStatusPage() {
   const [targetStatus, setTargetStatus] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
+  // Define repair type
+  interface Repair {
+    id: number;
+    status: string;
+    clientId: number;
+    clientName?: string;
+    inverterId: number;
+    inverterModel?: string;
+    inverterSerial?: string;
+    faultTypeId: number | null;
+    faultTypeName?: string;
+    faultDescription: string | null;
+    receivedDate: Date;
+    estimatedCompletionDate: Date | null;
+    technicianName: string | null;
+    technicianNotes: string | null;
+    laborHours: number | null;
+    statusHistory: StatusHistoryEntry[];
+    [key: string]: any;
+  }
+
   // Fetch repair details
-  const { data: repair, isLoading, error } = useQuery({
+  const { data: repair, isLoading, error } = useQuery<Repair>({
     queryKey: ['/api/repairs', repairId],
     enabled: !isNaN(repairId)
   });
