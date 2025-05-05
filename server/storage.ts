@@ -479,7 +479,8 @@ export class MemStorage implements IStorage {
   
   async getLowStockComponents(): Promise<Component[]> {
     return Array.from(this.components.values()).filter(
-      component => (component.currentStock || 0) <= (component.minimumStock || 0)
+      component => (component.currentStock !== undefined ? component.currentStock : 0) <= 
+                   (component.minimumStock !== undefined ? component.minimumStock : 10)
     );
   }
   

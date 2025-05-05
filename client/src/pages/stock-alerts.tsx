@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Card, 
   CardContent, 
@@ -24,7 +24,10 @@ import {
   AlertTriangle,
   ShoppingCart,
   ArrowRight,
-  Filter
+  Filter,
+  Edit,
+  Save,
+  X
 } from "lucide-react";
 import { Link } from "wouter";
 import { formatCurrency, getStockLevelColor } from "@/lib/utils";
@@ -36,10 +39,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function StockAlerts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
+  const [editingMinStock, setEditingMinStock] = useState<{id: number, value: number} | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch low stock components
   const { data: lowStockComponents, isLoading: isLoadingLowStock } = useQuery({
@@ -50,11 +58,34 @@ export default function StockAlerts() {
   const { data: categories } = useQuery({
     queryKey: ["/api/categories"],
   });
+  
+  // Mutation for updating minimum stock
+  const minStockMutation = useMutation({
+    mutationFn: async ({ id, minimumStock }: { id: number, minimumStock: number }) => {
+      return apiRequest("PATCH", `/api/components/${id}/min-stock`, { minimumStock });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/components"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/components/low-stock"] });
+      toast({
+        title: "Minimum stock updated",
+        description: "The minimum stock level has been updated successfully.",
+      });
+      setEditingMinStock(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update minimum stock: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Filtered components based on search term and category filter
   const filteredComponents = lowStockComponents ? lowStockComponents.filter(component => {
-    // Apply category filter if set
-    if (categoryFilter && component.categoryId !== parseInt(categoryFilter)) {
+    // Apply category filter if set and not "all"
+    if (categoryFilter && categoryFilter !== "all" && component.categoryId !== parseInt(categoryFilter)) {
       return false;
     }
 
@@ -128,7 +159,7 @@ export default function StockAlerts() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories?.map(category => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
@@ -211,7 +242,10 @@ export default function StockAlerts() {
                     <TableHead>Category</TableHead>
                     <TableHead>Part Number</TableHead>
                     <TableHead>Current Stock</TableHead>
-                    <TableHead>Minimum Level</TableHead>
+                    <TableHead className="flex items-center space-x-1">
+                      <span>Minimum Level</span>
+                      <span className="text-xs text-slate-500 font-normal">(click pencil to edit)</span>
+                    </TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Unit Price</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -231,7 +265,60 @@ export default function StockAlerts() {
                         <TableCell>{getCategoryName(component.categoryId)}</TableCell>
                         <TableCell>{component.partNumber || "—"}</TableCell>
                         <TableCell>{component.currentStock || 0}</TableCell>
-                        <TableCell>{component.minimumStock || 0}</TableCell>
+                        <TableCell>
+                          {editingMinStock && editingMinStock.id === component.id ? (
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                className="w-20"
+                                value={editingMinStock.value}
+                                onChange={(e) => setEditingMinStock({
+                                  ...editingMinStock,
+                                  value: parseInt(e.target.value) || 0
+                                })}
+                              />
+                              <div className="flex space-x-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => minStockMutation.mutate({
+                                    id: component.id,
+                                    minimumStock: editingMinStock.value
+                                  })}
+                                  disabled={minStockMutation.isPending}
+                                >
+                                  {minStockMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Save className="h-4 w-4 text-green-600" />
+                                  )}
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => setEditingMinStock(null)}
+                                >
+                                  <X className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <span>{component.minimumStock || 0}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setEditingMinStock({
+                                  id: component.id, 
+                                  value: component.minimumStock || 0
+                                })}
+                              >
+                                <Edit className="h-4 w-4 text-slate-400 hover:text-slate-600" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="space-y-2">
                             <Badge 
@@ -247,17 +334,10 @@ export default function StockAlerts() {
                               value={stockPercentage} 
                               className={`h-2 ${
                                 stockPercentage === 0 
-                                  ? "bg-red-200" 
+                                  ? "bg-red-200 [&>div]:bg-red-500" 
                                   : stockPercentage <= 50 
-                                  ? "bg-orange-200" 
-                                  : "bg-yellow-200"
-                              }`}
-                              indicatorClassName={`${
-                                stockPercentage === 0 
-                                  ? "bg-red-500" 
-                                  : stockPercentage <= 50 
-                                  ? "bg-orange-500" 
-                                  : "bg-yellow-500"
+                                  ? "bg-orange-200 [&>div]:bg-orange-500" 
+                                  : "bg-yellow-200 [&>div]:bg-yellow-500"
                               }`}
                             />
                           </div>
