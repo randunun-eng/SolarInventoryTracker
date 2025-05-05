@@ -81,21 +81,42 @@ export function useVoiceFeatures() {
 
     // Initialize speech synthesis voices
     if (window.speechSynthesis) {
+      // Fix for Chrome's bug where speech synthesis stops after ~15 seconds
+      // Chrome has a bug where it pauses TTS in background tabs after ~15 seconds
+      const speechSynthesisHack = () => {
+        if (window.speechSynthesis.speaking) {
+          console.log('Applying Chrome speech synthesis hack to prevent pause');
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      };
+      
+      // Apply the hack every 10 seconds
+      const keepAliveInterval = setInterval(speechSynthesisHack, 10000);
+      
       const loadVoices = () => {
         const availableVoices = window.speechSynthesis.getVoices();
         if (availableVoices.length > 0) {
+          console.log('Available voices:', availableVoices.map(v => v.name).join(', '));
           setVoices(availableVoices);
           // Set default to an English voice if available
           const defaultVoice = availableVoices.find(voice => 
             voice.lang.includes('en-') && voice.localService
           ) || availableVoices[0];
+          
+          console.log('Setting default voice to:', defaultVoice?.name || 'default browser voice');
           setSelectedVoice(defaultVoice);
+        } else {
+          console.log('No voices available yet');
         }
       };
 
       loadVoices();
       // Chrome loads voices asynchronously
       window.speechSynthesis.onvoiceschanged = loadVoices;
+      
+      // Clean up interval on unmount
+      return () => clearInterval(keepAliveInterval);
     }
   }, []);
 
@@ -215,7 +236,12 @@ export function useVoiceFeatures() {
 
   // Speak text
   const speak = useCallback((text: string) => {
-    if (!window.speechSynthesis) return;
+    console.log('speak() called with text:', text);
+    
+    if (!window.speechSynthesis) {
+      console.error('Speech synthesis not supported');
+      return;
+    }
     
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
@@ -223,14 +249,27 @@ export function useVoiceFeatures() {
     const utterance = new SpeechSynthesisUtterance(text);
     
     if (selectedVoice) {
+      console.log('Using selected voice:', selectedVoice.name);
       utterance.voice = selectedVoice;
+    } else {
+      console.log('No voice selected, using default browser voice');
     }
     
     utterance.rate = 1;
     utterance.pitch = 1;
     utterance.volume = 1;
     
-    window.speechSynthesis.speak(utterance);
+    // Add event listeners for debugging
+    utterance.onstart = () => console.log('Speech started');
+    utterance.onend = () => console.log('Speech ended');
+    utterance.onerror = (e) => console.error('Speech error:', e);
+    
+    try {
+      window.speechSynthesis.speak(utterance);
+      console.log('Speech synthesis started successfully');
+    } catch (error) {
+      console.error('Error starting speech synthesis:', error);
+    }
   }, [selectedVoice]);
 
   // Change voice
