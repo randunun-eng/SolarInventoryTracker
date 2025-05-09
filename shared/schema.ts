@@ -193,7 +193,8 @@ export const repairs = pgTable("repairs", {
   technicianNotes: text("technician_notes"),
   beforePhotos: text("before_photos").array(),
   afterPhotos: text("after_photos").array(),
-  repairPhotos: text("repair_photos").array().default([]),
+  // Temporarily commented out until database column is created
+  // repairPhotos: text("repair_photos").array().default([]),
   totalPartsCost: doublePrecision("total_parts_cost").default(0),
   totalCost: doublePrecision("total_cost").default(0),
   // Added fields for inverter model and serial number
@@ -221,7 +222,7 @@ export const insertRepairSchema = createInsertSchema(repairs).pick({
   technicianNotes: true,
   beforePhotos: true,
   afterPhotos: true,
-  repairPhotos: true,
+  // repairPhotos: true,
   totalPartsCost: true,
   totalCost: true,
   inverterModel: true,
