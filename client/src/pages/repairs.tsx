@@ -328,17 +328,8 @@ export default function Repairs() {
               <p className="text-sm text-slate-500 mb-4">
                 {searchTerm || (statusFilter && statusFilter !== "all")
                   ? "Try adjusting your search or filter criteria"
-                  : "Start by creating your first repair log"}
+                  : "Start by creating your first repair log using the 'Create Repair Log' button at the top of the page"}
               </p>
-              {!searchTerm && (!statusFilter || statusFilter === "all") && (
-                <Button 
-                  variant="default" 
-                  onClick={() => setIsAddRepairOpen(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Repair Log
-                </Button>
-              )}
             </div>
           )}
         </CardContent>
