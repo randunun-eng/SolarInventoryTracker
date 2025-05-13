@@ -50,10 +50,11 @@ export default function RepairStatusPage() {
   // Status update mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ status, note }: { status: string, note: string }) => {
-      return apiRequest(`/api/repairs/${repairId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status, notes: note })
-      });
+      return apiRequest(
+        'PATCH',
+        `/api/repairs/${repairId}/status`,
+        { status, notes: note }
+      );
     },
     onSuccess: () => {
       // Invalidate repair data to refresh
