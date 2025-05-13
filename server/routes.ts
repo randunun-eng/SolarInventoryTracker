@@ -412,7 +412,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/repairs", async (req: Request, res: Response) => {
     try {
       // Extract the data first to handle faultTypeName before validation
-      const requestData = req.body;
+      const requestData = { ...req.body };
+      
+      // Handle date conversion for receivedDate
+      if (requestData.receivedDate && typeof requestData.receivedDate === 'string') {
+        requestData.receivedDate = new Date(requestData.receivedDate);
+      }
+      
+      // Handle date conversion for completionDate
+      if (requestData.completionDate && typeof requestData.completionDate === 'string') {
+        requestData.completionDate = new Date(requestData.completionDate);
+      }
+      
+      // Handle date conversion for estimatedCompletionDate
+      if (requestData.estimatedCompletionDate && typeof requestData.estimatedCompletionDate === 'string') {
+        requestData.estimatedCompletionDate = new Date(requestData.estimatedCompletionDate);
+      }
+      
       let faultTypeId = requestData.faultTypeId;
       
       // If faultTypeName is provided but no faultTypeId, try to create or find a fault type
@@ -443,27 +459,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requestData.faultTypeId = faultTypeId;
       }
       
-      // Parse the incoming data with schema validation
-      const data = insertRepairSchema.parse(requestData);
-      
-      // Initialize status history with the initial status
-      const initialStatus = data.status || 'Received';
-      const initialEntry: StatusHistoryEntry = {
-        status: initialStatus as z.infer<typeof RepairStatusEnum>,
-        timestamp: new Date(),
-        note: 'Repair created',
-        userId: null,
-        userName: null
-      };
-      
-      // Create the repair with status history
-      const repair = await storage.createRepair({
-        ...data,
-        status: initialStatus,
-        statusHistory: [initialEntry]
-      });
-      
-      res.status(201).json(repair);
+      try {
+        // Parse the incoming data with schema validation
+        const data = insertRepairSchema.parse(requestData);
+        
+        // Initialize status history with the initial status
+        const initialStatus = data.status || 'Received';
+        const initialEntry: StatusHistoryEntry = {
+          status: initialStatus as z.infer<typeof RepairStatusEnum>,
+          timestamp: new Date(),
+          note: 'Repair created',
+          userId: null,
+          userName: null
+        };
+        
+        // Create the repair with status history
+        const repair = await storage.createRepair({
+          ...data,
+          status: initialStatus,
+          statusHistory: [initialEntry]
+        });
+        
+        res.status(201).json(repair);
+      } catch (parseError) {
+        console.error("Schema validation error:", parseError);
+        res.status(400).json({ error: "Invalid repair data", details: parseError });
+      }
     } catch (error) {
       console.error("Error creating repair:", error);
       res.status(400).json({ error: "Invalid repair data" });
@@ -475,7 +496,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       
       // Extract the data first to handle faultTypeName before validation
-      const requestData = req.body;
+      const requestData = { ...req.body };
+      
+      // Handle date conversion for receivedDate
+      if (requestData.receivedDate && typeof requestData.receivedDate === 'string') {
+        requestData.receivedDate = new Date(requestData.receivedDate);
+      }
+      
+      // Handle date conversion for completionDate
+      if (requestData.completionDate && typeof requestData.completionDate === 'string') {
+        requestData.completionDate = new Date(requestData.completionDate);
+      }
+      
+      // Handle date conversion for estimatedCompletionDate
+      if (requestData.estimatedCompletionDate && typeof requestData.estimatedCompletionDate === 'string') {
+        requestData.estimatedCompletionDate = new Date(requestData.estimatedCompletionDate);
+      }
+      
       let faultTypeId = requestData.faultTypeId;
       
       // If faultTypeName is provided but no faultTypeId, try to create or find a fault type
