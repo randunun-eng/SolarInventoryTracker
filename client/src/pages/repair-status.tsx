@@ -52,7 +52,7 @@ export default function RepairStatusPage() {
     mutationFn: async ({ status, note }: { status: string, note: string }) => {
       return apiRequest(`/api/repairs/${repairId}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status, note })
+        body: JSON.stringify({ status, notes: note })
       });
     },
     onSuccess: () => {
