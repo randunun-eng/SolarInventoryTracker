@@ -40,9 +40,13 @@ const repairFormSchema = insertRepairSchema.extend({
   faultTypeId: z.number().nullable().optional(), // Make faultTypeId optional
   faultTypeName: z.string().optional(), // Add field for fault type text input
   faultDescription: z.string().min(1, "Fault description is required"),
-  receivedDate: z.string().or(z.date()).transform((val) => 
-    typeof val === 'string' ? new Date(val) : val
-  ),
+  receivedDate: z.date().or(z.string()).transform((val) => {
+    if (typeof val === 'string') {
+      const date = new Date(val);
+      return isNaN(date.getTime()) ? new Date() : date;
+    }
+    return val;
+  }),
   // Remove estimated and completion date fields
   status: z.string().optional().nullable().refine(
     (val) => !val || Object.values(RepairStatusEnum.enum).includes(val as any), {
