@@ -76,17 +76,17 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
 
   // Fetch repair data if editing
   const { data: repair, isLoading: isLoadingRepair } = useQuery({
-    queryKey: repairId ? [`/api/repairs/${repairId}`] : null,
+    queryKey: repairId ? [`/api/repairs/${repairId}`] : ["no-repair"],
     enabled: !!repairId,
   });
 
   // Fetch clients for dropdown
-  const { data: clients, isLoading: isLoadingClients } = useQuery({
+  const { data: clients = [], isLoading: isLoadingClients } = useQuery({
     queryKey: ["/api/clients"],
   });
 
   // Fetch fault types for dropdown
-  const { data: faultTypes, isLoading: isLoadingFaultTypes } = useQuery({
+  const { data: faultTypes = [], isLoading: isLoadingFaultTypes } = useQuery({
     queryKey: ["/api/fault-types"],
   });
 
@@ -96,8 +96,8 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
   );
 
   // Fetch inverters for the selected client
-  const { data: clientInverters, isLoading: isLoadingInverters } = useQuery({
-    queryKey: selectedClientId ? [`/api/clients/${selectedClientId}/inverters`] : null,
+  const { data: clientInverters = [], isLoading: isLoadingInverters } = useQuery({
+    queryKey: selectedClientId ? [`/api/clients/${selectedClientId}/inverters`] : ["no-inverters"],
     enabled: !!selectedClientId,
   });
 
