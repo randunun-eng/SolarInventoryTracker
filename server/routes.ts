@@ -557,7 +557,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch("/api/repairs/:id/status", async (req: Request, res: Response) => {
+  // Handler for both PATCH and POST requests to update repair status
+  const handleRepairStatusUpdate = async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       console.log("Received status update for repair ID:", id, "Body:", req.body);
@@ -610,7 +611,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error updating repair status:", error);
       res.status(400).json({ error: "Invalid status data" });
     }
-  });
+  }
+  
+  // Register both PATCH and POST endpoints for the same handler
+  app.patch("/api/repairs/:id/status", handleRepairStatusUpdate);
+  app.post("/api/repairs/:id/status", handleRepairStatusUpdate);
   
   // Used Components
   app.get("/api/repairs/:id/components", async (req: Request, res: Response) => {

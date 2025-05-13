@@ -81,19 +81,30 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
       };
       
       // Call the API to update the repair status
-      // Using the POST method since some environments might not properly handle PATCH
-      await fetch(`/api/repairs/${repairId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatePayload),
-        credentials: 'include'
-      }).then(async (response) => {
+      // Use POST method instead of PATCH to avoid issues with some environments
+      console.log("Sending update for repair:", repairId, "Payload:", updatePayload);
+      
+      try {
+        const response = await fetch(`/api/repairs/${repairId}/status`, {
+          method: 'POST', // Using POST instead of PATCH for better compatibility
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatePayload),
+          credentials: 'include'
+        });
+        
         if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Error: ${response.status} - ${text}`);
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
+          throw new Error(`Error: ${response.status} - ${errorText}`);
         }
-        return response.json();
-      });
+        
+        const result = await response.json();
+        console.log("Update successful:", result);
+        return result;
+      } catch (err) {
+        console.error("Status update failed:", err);
+        throw err;
+      }
       
       toast({
         title: "Progress updated",
