@@ -560,12 +560,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/repairs/:id/status", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      console.log("Received status update for repair ID:", id, "Body:", req.body);
+      
       const schema = z.object({ 
         status: RepairStatusEnum,
         notes: z.string(),
         timestamp: z.string().optional()
       });
-      const { status, notes, timestamp } = schema.parse(req.body);
+      
+      // Safely parse the request body
+      let requestData = {};
+      try {
+        requestData = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch (e) {
+        console.error("Error parsing request body:", e);
+        return res.status(400).json({ error: "Invalid request body format" });
+      }
+      
+      const { status, notes, timestamp } = schema.parse(requestData);
       
       const repair = await storage.getRepair(id);
       if (!repair) {

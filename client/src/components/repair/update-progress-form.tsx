@@ -44,24 +44,24 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Fetch repair data
-  const { data: repair, isLoading } = useQuery({
-    queryKey: repairId ? [`/api/repairs/${repairId}`] : null,
+  const { data: repair = {}, isLoading } = useQuery({
+    queryKey: repairId ? [`/api/repairs/${repairId}`] : ["no-repair"],
     enabled: !!repairId,
   });
   
   const form = useForm<UpdateProgressFormValues>({
     resolver: zodResolver(updateProgressSchema),
     defaultValues: {
-      status: repair?.status || "In Progress",
+      status: (repair as any)?.status || "In Progress",
       notes: "",
     },
   });
   
   // Update form values when repair data loads
   useEffect(() => {
-    if (repair) {
+    if (repair && Object.keys(repair).length > 0) {
       form.reset({
-        status: repair.status,
+        status: (repair as any).status || "In Progress",
         notes: "",
       });
     }
@@ -81,7 +81,19 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
       };
       
       // Call the API to update the repair status
-      await apiRequest("PATCH", `/api/repairs/${repairId}/status`, updatePayload);
+      // Using the POST method since some environments might not properly handle PATCH
+      await fetch(`/api/repairs/${repairId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload),
+        credentials: 'include'
+      }).then(async (response) => {
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Error: ${response.status} - ${text}`);
+        }
+        return response.json();
+      });
       
       toast({
         title: "Progress updated",
