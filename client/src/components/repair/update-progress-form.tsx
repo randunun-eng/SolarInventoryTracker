@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { RepairStatusEnum } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 import {
   Form,
@@ -111,10 +111,21 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
         throw new Error(`Error: ${updateResponse.status} - ${errorText}`);
       }
       
+      // Invalidate ALL repair data to ensure UI is refreshed
+      queryClient.invalidateQueries({ queryKey: ['/api/repairs'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/repairs/${repairId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/repairs/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/repairs/recent'] });
+      
       toast({
         title: "Progress updated",
         description: "The repair status has been updated successfully.",
       });
+      
+      // Force a window reload to ensure all components refresh
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
       
       onSuccess();
     } catch (error: any) {
