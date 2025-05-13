@@ -235,6 +235,36 @@ export function RepairDetailModal({
                   </div>
                 )}
                 
+                {/* Display repair photos */}
+                {repair.repairPhotos && repair.repairPhotos.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-slate-500 mb-2">Repair Photos</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {repair.repairPhotos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={photo} 
+                            alt={`Repair photo ${index + 1}`} 
+                            className="h-40 w-full object-cover rounded-md border"
+                            onClick={() => window.open(photo, '_blank')}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(photo, '_blank')}
+                              className="bg-white"
+                            >
+                              View Full Size
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <Separator className="my-4" />
                 
                 <div className="flex justify-end space-x-3">
