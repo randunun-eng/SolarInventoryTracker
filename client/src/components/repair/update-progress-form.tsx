@@ -73,37 +73,42 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
     setIsSubmitting(true);
     
     try {
-      // Prepare the status update payload
-      const updatePayload = {
+      // Get the current repair data first
+      const currentRepair = await fetch(`/api/repairs/${repairId}`).then(res => res.json());
+      
+      if (!currentRepair) {
+        throw new Error("Repair not found");
+      }
+      
+      // Create a status history entry
+      const newStatusEntry = {
         status: data.status,
-        notes: data.notes,
         timestamp: new Date().toISOString(),
+        note: data.notes,
+        userId: null,
+        userName: null
       };
       
-      // Call the API to update the repair status
-      // Use POST method instead of PATCH to avoid issues with some environments
-      console.log("Sending update for repair:", repairId, "Payload:", updatePayload);
+      // Get existing status history or initialize empty array
+      const statusHistory = Array.isArray(currentRepair.statusHistory) 
+        ? [...currentRepair.statusHistory, newStatusEntry]
+        : [newStatusEntry];
       
-      try {
-        const response = await fetch(`/api/repairs/${repairId}/status`, {
-          method: 'POST', // Using POST instead of PATCH for better compatibility
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatePayload),
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Error response:", errorText);
-          throw new Error(`Error: ${response.status} - ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log("Update successful:", result);
-        return result;
-      } catch (err) {
-        console.error("Status update failed:", err);
-        throw err;
+      // Update the whole repair record with the new status and history
+      const updateResponse = await fetch(`/api/repairs/${repairId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...currentRepair,
+          status: data.status,
+          statusHistory: statusHistory
+        })
+      });
+      
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        console.error("Error updating repair:", errorText);
+        throw new Error(`Error: ${updateResponse.status} - ${errorText}`);
       }
       
       toast({
@@ -113,6 +118,7 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
       
       onSuccess();
     } catch (error: any) {
+      console.error("Status update error:", error);
       toast({
         title: "Error",
         description: `Failed to update progress: ${error.message}`,
