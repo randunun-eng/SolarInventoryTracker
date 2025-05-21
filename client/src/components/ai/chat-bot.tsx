@@ -78,21 +78,30 @@ export function ChatBot() {
     setIsLoading(true);
     
     try {
-      const response = await apiRequest<{ sessionId: string; response: string }>({
-        url: '/api/chat',
+      // Use proper fetch API with correct URL and method properties
+      const response = await fetch('/api/chat', {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           sessionId,
           message: userMessage.content,
           isVoiceMode: voiceMode,
-        },
+        }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
       
       setMessages((prevMessages) => [
         ...prevMessages,
         {
           id: Math.random().toString(36).substring(2, 15),
-          content: response.response,
+          content: data.response,
           type: 'assistant',
           timestamp: new Date(),
         },
