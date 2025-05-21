@@ -66,6 +66,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.delete("/api/categories/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Call the storage function that will safely handle component references
+      const result = await storage.deleteCategory(id);
+      
+      if (!result.success) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Respond with success and information about affected components
+      res.status(200).json({ 
+        message: "Category deleted successfully", 
+        affectedComponents: result.affectedComponents || 0,
+        note: result.affectedComponents ? "Components previously in this category have been updated to have no category." : ""
+      });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ error: "Failed to delete category" });
+    }
+  });
+  
   // Suppliers
   app.get("/api/suppliers", async (req: Request, res: Response) => {
     const suppliers = await storage.getSuppliers();

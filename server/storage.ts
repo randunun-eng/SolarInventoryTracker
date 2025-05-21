@@ -770,6 +770,33 @@ export class DatabaseStorage implements IStorage {
     return updatedCategory;
   }
   
+  async deleteCategory(id: number): Promise<{ success: boolean; affectedComponents?: number }> {
+    // First, check if any components are using this category
+    const componentsWithCategory = await db
+      .select({ id: components.id })
+      .from(components)
+      .where(eq(components.categoryId, id));
+    
+    // If components are using this category, set their categoryId to null
+    if (componentsWithCategory.length > 0) {
+      await db
+        .update(components)
+        .set({ categoryId: null })
+        .where(eq(components.categoryId, id));
+    }
+    
+    // Now delete the category
+    const result = await db
+      .delete(categories)
+      .where(eq(categories.id, id))
+      .returning();
+    
+    return { 
+      success: result.length > 0,
+      affectedComponents: componentsWithCategory.length
+    };
+  }
+  
   // Supplier Management
   async getSuppliers(): Promise<Supplier[]> {
     return db.select().from(suppliers);
