@@ -85,12 +85,7 @@ const notificationsSettingsSchema = z.object({
 type GeneralSettingsValues = z.infer<typeof generalSettingsSchema>;
 type NotificationsSettingsValues = z.infer<typeof notificationsSettingsSchema>;
 
-// Sample user data for the Users tab
-const users = [
-  { id: 1, name: "John Doe", email: "johndoe@example.com", role: "Admin", status: "Active" },
-  { id: 2, name: "Jane Smith", email: "janesmith@example.com", role: "Technician", status: "Active" },
-  { id: 3, name: "Bob Johnson", email: "bjohnson@example.com", role: "Manager", status: "Inactive" },
-];
+// Fetch real users from the database instead of using sample data
 
 export default function Settings() {
   const { toast } = useToast();
@@ -587,45 +582,19 @@ export default function Settings() {
                         Manage system users and their access permissions
                       </CardDescription>
                     </div>
-                    <Button>
-                      <UserCog className="mr-2 h-4 w-4" />
-                      Add User
-                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{user.role}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={user.status === "Active" ? "default" : "secondary"}
-                            >
-                              {user.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
-                              Edit
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="mb-4">
+                    <p className="text-sm text-muted-foreground">
+                      User management is available on the dedicated Users page. You can access it directly from the sidebar.
+                    </p>
+                    <div className="mt-4">
+                      <Button asChild className="mr-2">
+                        <a href="/users">Go to User Management</a>
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
