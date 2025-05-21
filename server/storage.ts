@@ -83,6 +83,7 @@ export interface IStorage {
   getCommonFaultTypes(limit: number): Promise<{faultTypeId: number, faultTypeName: string, percentage: number}[]>;
 }
 
+// implement the interface with a memory storage
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private categories: Map<number, Category>;
@@ -105,9 +106,8 @@ export class MemStorage implements IStorage {
   private currentFaultTypeId: number;
   private currentRepairId: number;
   private currentUsedComponentId: number;
-
+  
   constructor() {
-    // Initialize maps
     this.users = new Map();
     this.categories = new Map();
     this.suppliers = new Map();
@@ -119,7 +119,6 @@ export class MemStorage implements IStorage {
     this.repairs = new Map();
     this.usedComponents = new Map();
     
-    // Initialize IDs
     this.currentUserId = 1;
     this.currentCategoryId = 1;
     this.currentSupplierId = 1;
@@ -131,243 +130,11 @@ export class MemStorage implements IStorage {
     this.currentRepairId = 1;
     this.currentUsedComponentId = 1;
     
-    // Create some initial data
     this.initializeData();
   }
   
   private initializeData() {
-    // Create default categories
-    const categories = [
-      { name: "IC", description: "Integrated Circuits" },
-      { name: "Transistor", description: "Transistors and MOSFETs" },
-      { name: "Capacitor", description: "All types of capacitors" },
-      { name: "Resistor", description: "All types of resistors" },
-      { name: "Diode", description: "Diodes and rectifiers" },
-      { name: "Connector", description: "Connectors and terminals" },
-    ];
-    
-    categories.forEach(cat => this.createCategory(cat));
-    
-    // Create default suppliers
-    const suppliers = [
-      { name: "Mouser Electronics", contactName: "John Smith", email: "john@mouser.com", phone: "555-123-4567", address: "123 Component Way" },
-      { name: "Digi-Key", contactName: "Jane Doe", email: "jane@digikey.com", phone: "555-987-6543", address: "456 Electronics Blvd" },
-    ];
-    
-    suppliers.forEach(sup => this.createSupplier(sup));
-    
-    // Create default fault types
-    const faultTypes = [
-      { name: "DC Input Failure", description: "Problems with the DC input stage" },
-      { name: "Control Board Failure", description: "Issues with the main control board" },
-      { name: "Cooling Fan Issues", description: "Problems with cooling system" },
-      { name: "Power Supply Failure", description: "Issues with internal power supply" },
-      { name: "Display/Communication Error", description: "Display or communication problems" },
-    ];
-    
-    faultTypes.forEach(ft => this.createFaultType(ft));
-    
-    // Create default components
-    const components = [
-      { 
-        name: "LM7805 Voltage Regulator", 
-        partNumber: "LM7805", 
-        categoryId: 1, 
-        description: "5V Voltage Regulator",
-        minimumStock: 10,
-        currentStock: 5,
-        supplierPrice: 1.20,
-        supplierId: 1,
-      },
-      { 
-        name: "470μF Electrolytic Capacitor", 
-        partNumber: "CAP-470UF", 
-        categoryId: 3, 
-        description: "470μF 25V Electrolytic Capacitor",
-        minimumStock: 20,
-        currentStock: 12,
-        supplierPrice: 0.50,
-        supplierId: 2,
-      },
-      { 
-        name: "IRF540N MOSFET", 
-        partNumber: "IRF540N", 
-        categoryId: 2, 
-        description: "100V 33A N-Channel MOSFET",
-        minimumStock: 15,
-        currentStock: 3,
-        supplierPrice: 2.45,
-        supplierId: 1,
-      },
-      { 
-        name: "1N4007 Diode", 
-        partNumber: "1N4007", 
-        categoryId: 5, 
-        description: "1000V 1A General Purpose Diode",
-        minimumStock: 30,
-        currentStock: 15,
-        supplierPrice: 0.10,
-        supplierId: 2,
-      },
-      { 
-        name: "IGBT Module FGA25N120ANTD", 
-        partNumber: "FGA25N120ANTD", 
-        categoryId: 2, 
-        description: "1200V 25A Field Stop IGBT",
-        minimumStock: 10,
-        currentStock: 27,
-        supplierPrice: 8.75,
-        supplierId: 1,
-      },
-      {
-        name: "10A Fuse", 
-        partNumber: "FUSE-10A", 
-        categoryId: 6, 
-        description: "10A Fast-Blow Fuse",
-        minimumStock: 50,
-        currentStock: 35,
-        supplierPrice: 0.30,
-        supplierId: 2,
-      },
-      {
-        name: "DC Fuse 15A", 
-        partNumber: "FUSE-15A-DC", 
-        categoryId: 6, 
-        description: "15A DC Fuse",
-        minimumStock: 25,
-        currentStock: 18,
-        supplierPrice: 5.50,
-        supplierId: 1,
-      },
-      {
-        name: "Thermal Paste", 
-        partNumber: "TP-100", 
-        categoryId: 6, 
-        description: "Thermal Compound for Heat Transfer",
-        minimumStock: 5,
-        currentStock: 3,
-        supplierPrice: 6.75,
-        supplierId: 2,
-      }
-    ];
-    
-    components.forEach(comp => this.createComponent(comp));
-    
-    // Create default clients
-    const clients = [
-      { name: "Sarah Johnson", email: "sarah.j@example.com", phone: "+1 (555) 123-4567", address: "1234 Solar Lane, Sunnyvale, CA 94086" },
-      { name: "Michael Brown", email: "mbrown@example.com", phone: "+1 (555) 234-5678", address: "567 Energy Ave, Springfield, IL 62701" },
-      { name: "David Wilson", email: "dwilson@example.com", phone: "+1 (555) 345-6789", address: "890 Power Drive, Austin, TX 78701" },
-    ];
-    
-    clients.forEach(client => this.createClient(client));
-    
-    // Create default inverters
-    const inverters = [
-      { clientId: 1, model: "SMA Sunny Boy - SB5000TL", serialNumber: "SB212345678", warrantyStatus: "Expired", installationDate: new Date("2020-05-15") },
-      { clientId: 2, model: "Fronius Primo - 8.2-1", serialNumber: "FP987654321", warrantyStatus: "Valid", installationDate: new Date("2022-02-10") },
-      { clientId: 3, model: "Growatt - SPF 5000TL HVM", serialNumber: "GW567891234", warrantyStatus: "Valid", installationDate: new Date("2021-11-25") },
-    ];
-    
-    inverters.forEach(inv => this.createInverter(inv));
-    
-    // Create some repair logs
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    
-    const repairs = [
-      { 
-        inverterId: 1, 
-        clientId: 1, 
-        faultTypeId: 1, 
-        faultDescription: "Inverter showing Error 503 - DC Input Failure. Unit powers on but shows error code and won't convert power. Display operational but red LED error indicator lit.",
-        status: "In Progress",
-        receivedDate: oneWeekAgo,
-        estimatedCompletionDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-        laborHours: 2.5,
-        laborRate: 85,
-        technicianName: "Alex Martinez",
-        technicianNotes: "DC input stage damaged due to possible lightning strike. Replaced IGBT module and DC fuses. Preliminary testing shows normal operation. Need to complete 24hr load test before closing repair ticket.",
-        beforePhotos: [],
-        afterPhotos: [],
-        totalPartsCost: 42.70,
-        totalCost: 255.20
-      },
-      {
-        inverterId: 2, 
-        clientId: 2, 
-        faultTypeId: 2, 
-        faultDescription: "Unit powers on but shuts down after a few minutes with Error 567.",
-        status: "Completed",
-        receivedDate: twoWeeksAgo,
-        completionDate: oneWeekAgo,
-        laborHours: 3.0,
-        laborRate: 85,
-        technicianName: "Alex Martinez",
-        technicianNotes: "Main control board had several blown capacitors. Replaced capacitors and performed full system diagnostic. Unit now functioning normally.",
-        beforePhotos: [],
-        afterPhotos: [],
-        totalPartsCost: 15.75,
-        totalCost: 270.75
-      },
-      {
-        inverterId: 3, 
-        clientId: 3, 
-        faultTypeId: 3, 
-        faultDescription: "Overheating during operation, fans not running.",
-        status: "Received",
-        receivedDate: now,
-        estimatedCompletionDate: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000),
-        laborHours: 0,
-        laborRate: 85,
-        technicianName: "",
-        technicianNotes: "",
-        beforePhotos: [],
-        afterPhotos: [],
-        totalPartsCost: 0,
-        totalCost: 0
-      }
-    ];
-    
-    repairs.forEach(repair => this.createRepair(repair));
-    
-    // Add used components to repairs
-    const usedComponents = [
-      {
-        repairId: 1,
-        componentId: 5, // IGBT Module
-        quantity: 1,
-        unitPrice: 24.95
-      },
-      {
-        repairId: 1,
-        componentId: 7, // DC Fuse 15A
-        quantity: 2,
-        unitPrice: 5.50
-      },
-      {
-        repairId: 1,
-        componentId: 8, // Thermal Paste
-        quantity: 1,
-        unitPrice: 6.75
-      },
-      {
-        repairId: 2,
-        componentId: 2, // 470μF Electrolytic Capacitor
-        quantity: 4,
-        unitPrice: 0.65
-      },
-      {
-        repairId: 2,
-        componentId: 1, // LM7805
-        quantity: 1,
-        unitPrice: 1.50
-      }
-    ];
-    
-    usedComponents.forEach(uc => this.createUsedComponent(uc));
-    
+    // Create initial data for demo
     // Create admin user
     this.createUser({
       username: "admin",
@@ -516,7 +283,8 @@ export class MemStorage implements IStorage {
     const existingComponent = this.components.get(id);
     if (!existingComponent) return undefined;
     
-    const newStock = Math.max(0, (existingComponent.currentStock || 0) + quantity);
+    const newStock = existingComponent.currentStock + quantity;
+    
     const updatedComponent: Component = { ...existingComponent, currentStock: newStock };
     this.components.set(id, updatedComponent);
     return updatedComponent;
@@ -524,8 +292,7 @@ export class MemStorage implements IStorage {
   
   async getLowStockComponents(): Promise<Component[]> {
     return Array.from(this.components.values()).filter(
-      component => (component.currentStock !== undefined ? component.currentStock : 0) <= 
-                   (component.minimumStock !== undefined ? component.minimumStock : 10)
+      (component) => component.currentStock < component.minimumStock
     );
   }
   
@@ -536,7 +303,7 @@ export class MemStorage implements IStorage {
   
   async getComponentPurchases(componentId: number): Promise<Purchase[]> {
     return Array.from(this.purchases.values()).filter(
-      purchase => purchase.componentId === componentId
+      (purchase) => purchase.componentId === componentId
     );
   }
   
@@ -544,10 +311,6 @@ export class MemStorage implements IStorage {
     const id = this.currentPurchaseId++;
     const newPurchase: Purchase = { ...purchase, id };
     this.purchases.set(id, newPurchase);
-    
-    // Update component stock
-    await this.updateComponentStock(purchase.componentId, purchase.quantity);
-    
     return newPurchase;
   }
   
@@ -583,7 +346,7 @@ export class MemStorage implements IStorage {
   
   async getInvertersByClient(clientId: number): Promise<Inverter[]> {
     return Array.from(this.inverters.values()).filter(
-      inverter => inverter.clientId === clientId
+      (inverter) => inverter.clientId === clientId
     );
   }
   
@@ -593,7 +356,7 @@ export class MemStorage implements IStorage {
   
   async getInverterBySerialNumber(serialNumber: string): Promise<Inverter | undefined> {
     return Array.from(this.inverters.values()).find(
-      inverter => inverter.serialNumber === serialNumber
+      (inverter) => inverter.serialNumber === serialNumber
     );
   }
   
@@ -636,13 +399,13 @@ export class MemStorage implements IStorage {
   
   async getRepairsByClient(clientId: number): Promise<Repair[]> {
     return Array.from(this.repairs.values()).filter(
-      repair => repair.clientId === clientId
+      (repair) => repair.clientId === clientId
     );
   }
   
   async getRepairsByInverter(inverterId: number): Promise<Repair[]> {
     return Array.from(this.repairs.values()).filter(
-      repair => repair.inverterId === inverterId
+      (repair) => repair.inverterId === inverterId
     );
   }
   
@@ -668,7 +431,7 @@ export class MemStorage implements IStorage {
   
   async getActiveRepairs(): Promise<Repair[]> {
     return Array.from(this.repairs.values()).filter(
-      repair => repair.status !== "Completed" && repair.status !== "Cancelled"
+      (repair) => repair.status !== 'Completed' && repair.status !== 'Cancelled'
     );
   }
   
@@ -681,7 +444,7 @@ export class MemStorage implements IStorage {
   // Used Components Management
   async getUsedComponentsByRepair(repairId: number): Promise<UsedComponent[]> {
     return Array.from(this.usedComponents.values()).filter(
-      usedComponent => usedComponent.repairId === repairId
+      (usedComponent) => usedComponent.repairId === repairId
     );
   }
   
@@ -689,10 +452,6 @@ export class MemStorage implements IStorage {
     const id = this.currentUsedComponentId++;
     const newUsedComponent: UsedComponent = { ...usedComponent, id };
     this.usedComponents.set(id, newUsedComponent);
-    
-    // Decrease component stock
-    await this.updateComponentStock(usedComponent.componentId, -usedComponent.quantity);
-    
     return newUsedComponent;
   }
   
@@ -700,12 +459,12 @@ export class MemStorage implements IStorage {
     const componentUsage = new Map<number, number>();
     
     // Count usage of each component
-    Array.from(this.usedComponents.values()).forEach(uc => {
+    for (const uc of this.usedComponents.values()) {
       const currentCount = componentUsage.get(uc.componentId) || 0;
       componentUsage.set(uc.componentId, currentCount + uc.quantity);
-    });
+    }
     
-    // Convert to array and sort
+    // Convert to array and get component details
     const result = Array.from(componentUsage.entries())
       .map(([componentId, totalUsed]) => {
         const component = this.components.get(componentId);
@@ -725,8 +484,8 @@ export class MemStorage implements IStorage {
     const faultTypeCounts = new Map<number, number>();
     let totalRepairs = 0;
     
-    // Count each fault type
-    Array.from(this.repairs.values()).forEach(repair => {
+    // Count occurrences of each fault type
+    this.repairs.forEach(repair => {
       if (repair.faultTypeId) {
         totalRepairs++;
         const currentCount = faultTypeCounts.get(repair.faultTypeId) || 0;
@@ -751,6 +510,8 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Implementation using PostgreSQL database
+/*
 import { 
   eq, 
   and, 
@@ -775,7 +536,7 @@ import {
   usedComponents
 } from "@shared/schema";
 
-export class DatabaseStorage implements IStorage {
+class DatabaseStorageClass implements IStorage {
   // User Management
   async getUsers(): Promise<User[]> {
     return db.select().from(users);
@@ -855,27 +616,7 @@ export class DatabaseStorage implements IStorage {
     
     return result.length > 0;
   }
-  
-  // Category Management
-  async getCategories(): Promise<Category[]> {
-    return db.select().from(categories);
-  }
-  
-  async getCategory(id: number): Promise<Category | undefined> {
-    const [category] = await db.select().from(categories).where(eq(categories.id, id));
-    return category;
-  }
-  
-  async createCategory(category: InsertCategory): Promise<Category> {
-    const [newCategory] = await db.insert(categories).values(category).returning();
-    return newCategory;
-  }
-  
-  async updateCategory(id: number, category: InsertCategory): Promise<Category | undefined> {
-    const [updatedCategory] = await db
-      .update(categories)
-      .set(category)
-      .where(eq(categories.id, id))
-      .returning();
-    return updatedCategory;
-  }
+}
+*/
+
+export const storage = new MemStorage();

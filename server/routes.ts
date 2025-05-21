@@ -166,6 +166,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // put application routes here
   // prefix all routes with /api
+  
+  // User Management
+  app.get("/api/users", async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+  
+  app.get("/api/users/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+  
+  app.post("/api/users", async (req: Request, res: Response) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(data);
+      
+      // Don't return the password field
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      
+      // Check if it's a validation error or username taken error
+      if (error.message && error.message.includes("already taken")) {
+        return res.status(409).json({ error: error.message });
+      }
+      
+      res.status(400).json({ error: "Invalid user data" });
+    }
+  });
+  
+  app.put("/api/users/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // If password is empty string, remove it from the payload
+      if (req.body.password === '') {
+        delete req.body.password;
+      }
+      
+      const user = await storage.updateUser(id, req.body);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't return the password field
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      
+      // Check if it's a username taken error
+      if (error.message && error.message.includes("already taken")) {
+        return res.status(409).json({ error: error.message });
+      }
+      
+      res.status(400).json({ error: "Invalid user data" });
+    }
+  });
+  
+  app.delete("/api/users/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await storage.deleteUser(id);
+      
+      if (!result) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.status(200).json({ message: "User deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      
+      // Check if it's the last admin error
+      if (error.message && error.message.includes("Cannot delete the last admin")) {
+        return res.status(409).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
 
   // Categories
   app.get("/api/categories", async (req: Request, res: Response) => {
