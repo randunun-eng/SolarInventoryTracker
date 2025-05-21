@@ -367,165 +367,85 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
       // Query the database directly with exact information
       const components = await storage.getComponents();
       
-      // Handle special queries about the entire 78xx series (positive regulators)
-      if ((command.toLowerCase().includes('78 series') || 
-           command.toLowerCase().includes('78xx') || 
-           command.toLowerCase().includes('78 family')) && 
-          !rawComponentName.toLowerCase().includes('7812') && 
-          !rawComponentName.toLowerCase().includes('7805')) {
-        console.log("Detected query about the entire 78xx series");
+      // Only search our actual component database
+      // Get a list of all component names for better searching
+      const componentNameVariations = [];
+      
+      // Find matching components in the inventory
+      const foundComponents = components.filter(comp => {
+        const name = comp.name.toLowerCase();
+        const partNumber = comp.partNumber ? comp.partNumber.toLowerCase() : '';
+        const description = comp.description ? comp.description.toLowerCase() : '';
         
-        return `The 78xx series is a family of positive voltage regulators with fixed output voltages. The most common models are:
-          • 7805 - Provides +5V fixed output, commonly used in digital circuits
-          • 7806 - Provides +6V fixed output
-          • 7808 - Provides +8V fixed output
-          • 7809 - Provides +9V fixed output
-          • 7812 - Provides +12V fixed output, often used for motors and relays
-          • 7815 - Provides +15V fixed output
-          • 7818 - Provides +18V fixed output
-          • 7824 - Provides +24V fixed output
-          
-          All these regulators typically come in TO-220 packages and can provide up to 1A of current. They require an input voltage about 2-3V higher than their output voltage to maintain regulation.`;
-      }
-      
-      // Handle special queries about the entire 79xx series (negative regulators)
-      if ((command.toLowerCase().includes('79 series') || 
-           command.toLowerCase().includes('79xx') || 
-           command.toLowerCase().includes('79 family'))) {
-        console.log("Detected query about the entire 79xx series");
+        // Create variations for searching
+        componentNameVariations.push(name);
+        if (partNumber) componentNameVariations.push(partNumber);
         
-        return `The 79xx series is a family of negative voltage regulators with fixed output voltages. The most common models are:
-          • 7905 - Provides -5V fixed output
-          • 7906 - Provides -6V fixed output
-          • 7908 - Provides -8V fixed output
-          • 7909 - Provides -9V fixed output
-          • 7912 - Provides -12V fixed output
-          • 7915 - Provides -15V fixed output
-          • 7918 - Provides -18V fixed output
-          • 7924 - Provides -24V fixed output
-          
-          These regulators are complements to the 78xx positive regulators and are often used together to create dual-rail power supplies. They have the same current capability (up to 1A) and require about 2-3V of headroom between the input and output voltages, but with negative voltages.`;
-      }
-      
-      // Handle special case for 7805 voltage regulator
-      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7805')) {
-        console.log("Detected query for 7805 voltage regulator");
-        
-        // The 7805 is a fixed positive voltage regulator with +5V output
-        if (voltageQuery) {
-          return `The 7805 is a fixed positive voltage regulator that provides a stable +5 volt DC output. It can handle input voltages from 7V to 35V while maintaining a regulated 5V output, making it ideal for digital circuits and microcontrollers.`;
-        } else if (pinoutQuery) {
-          return `The 7805 in a TO-220 package has 3 pins: 
-          1. Input (connected to unregulated DC)
-          2. Ground (common)
-          3. Output (regulated +5V DC)
-          
-          It requires proper heatsinking for currents above 100mA and typically can supply up to 1A of current.`;
-        } else {
-          return `The 7805 is a positive voltage regulator in the 78xx series that provides a fixed +5V DC output. It's available in TO-220, TO-252, and SOT-223 packages. Key specifications include:
-          - Output voltage: +5V DC (±4% tolerance)
-          - Maximum output current: 1A
-          - Input voltage range: 7V to 35V
-          - Dropout voltage: 2V (typical)
-          - Thermal protection and short-circuit protection
-          - Operating temperature range: 0°C to 125°C
-          
-          It's commonly used in digital circuits, microcontroller systems, and as a post-regulator after transformers and rectifiers.`;
-        }
-      }
-      
-      // Handle special case for 7812 voltage regulator
-      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7812')) {
-        console.log("Detected query for 7812 voltage regulator");
-        
-        // The 7812 is a fixed positive voltage regulator with +12V output
-        if (voltageQuery) {
-          return `The 7812 is a fixed positive voltage regulator that provides a stable +12 volt DC output. It's commonly used in power supply circuits where a regulated 12V output is needed.`;
-        } else {
-          return `The 7812 is a positive voltage regulator in the 78xx series. It provides a fixed +12V DC output. These components are typically available in TO-220 packages and are commonly used in power supply circuits. The 7812 requires an input voltage of at least 14.5V (about 2.5V higher than its output) for proper regulation.`;
-        }
-      }
-      
-      // Handle special case for 7912 negative voltage regulator
-      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7912')) {
-        console.log("Detected query for 7912 negative voltage regulator");
-        
-        // The 7912 is a fixed negative voltage regulator with -12V output
-        if (voltageQuery) {
-          return `The 7912 is a fixed negative voltage regulator that provides a stable -12 volt DC output. It's part of the 79xx series of negative voltage regulators.`;
-        } else {
-          return `The 7912 is a negative voltage regulator in the 79xx series. Key specifications include:
-          - Output voltage: -12V DC (±4% tolerance)
-          - Maximum output current: 1A
-          - Input voltage range: -35V to -14.5V (requires about 2.5V headroom)
-          - Dropout voltage: 2V (typical)
-          - Thermal and short-circuit protection
-          - Available in TO-220 package
-          
-          It's commonly used in dual supply circuits that require both positive and negative voltage rails, often paired with a 7812 positive regulator.`;
-        }
-      }
-      
-      // Handle special case for L7905 negative voltage regulator
-      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7905')) {
-        console.log("Detected query for L7905 negative voltage regulator");
-        
-        // The L7905 is a fixed negative voltage regulator with -5V output
-        if (voltageQuery) {
-          return `The L7905 is a fixed negative voltage regulator that provides a stable -5 volt DC output. It's commonly used in power supply circuits where a regulated negative voltage is needed.`;
-        } else {
-          return `The L7905 is a negative voltage regulator in the 79xx series. It provides a fixed -5V DC output. These components are typically available in TO-220 packages and are commonly used in dual-supply power circuits.`;
-        }
-      }
-      
-      // Handle 78M05 specifically
-      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('78m05')) {
-        const m78Component = components.find(c => 
-          c.name.toLowerCase().replace(/\s+/g, '') === '78m05'
-        );
-        
-        if (m78Component) {
-          console.log('Found exact 78M05 component:', m78Component);
-          
-          // Check if this is a voltage query
-          if (command.toLowerCase().includes('voltage') || 
-              command.toLowerCase().includes('volts') || 
-              command.toLowerCase().includes('vdc') ||
-              command.toLowerCase().includes('output')) {
-            
-            // Use the description field which contains the voltage spec
-            // For 78M05, the description is "+5 VDC"
-            return `The ${m78Component.name} is a ${m78Component.description} voltage regulator. It provides a fixed positive 5 volt DC output.`;
-          }
-          
-          // For stock queries
-          return `We have ${m78Component.currentStock} ${m78Component.name} components in stock. 
-            The minimum stock level is set to ${m78Component.minimumStock}.`;
-        }
-      }
-      
-      // Create normalized versions for comparison for other components
-      const normalizedQuery = rawComponentName.toLowerCase().replace(/\s+/g, '');
-      console.log(`Normalized component query: "${normalizedQuery}"`);
-      
-      // Find components that match when spaces are removed
-      const matchingComponents = components.filter(c => {
-        const normalizedName = c.name.toLowerCase().replace(/\s+/g, '');
-        return normalizedName.includes(normalizedQuery) || 
-               normalizedQuery.includes(normalizedName);
+        // Check if any of the component fields match the query
+        return name.includes(rawComponentName.toLowerCase()) || 
+               partNumber.includes(rawComponentName.toLowerCase()) ||
+               description.includes(rawComponentName.toLowerCase());
       });
       
-      console.log(`Found ${matchingComponents.length} potential matches`);
+      console.log(`Found ${foundComponents.length} potential matches`);
       
-      if (matchingComponents.length > 0) {
-        const component = matchingComponents[0];
-        return `I found ${component.name} in inventory. 
-          We currently have ${component.currentStock} units in stock. 
+      if (foundComponents.length > 0) {
+        // We found at least one component that matches the query
+        if (voltageQuery) {
+          // The user is asking about voltage specifications
+          const voltageResponses = foundComponents.map(component => {
+            let voltageInfo = "Voltage information not specified";
+            if (component.description && component.description.match(/(\d+\.?\d*)\s*V(olt)?/i)) {
+              voltageInfo = component.description.match(/(\d+\.?\d*)\s*V(olt)?/i)![1] + " volts";
+            }
+            
+            return `${component.name} (${component.partNumber || 'No part number'}): ${voltageInfo}`;
+          });
+          
+          return voltageResponses.join("\n");
+        } else if (pinoutQuery) {
+          // The user is asking about pinout
+          const pinoutResponses = foundComponents.map(component => {
+            return `${component.name} (${component.partNumber || 'No part number'}) pinout information: ${component.description || 'No detailed pinout information available in inventory.'}`;
+          });
+          
+          return pinoutResponses.join("\n");
+        } else if (command.toLowerCase().includes('many') || 
+                   /stock|inventory|available|have|many/i.test(command)) {
+          // The user is asking about stock levels
+          const stockResponses = foundComponents.map(component => {
+            return `${component.name} has ${component.currentStock} units in stock. 
           The minimum stock level is set to ${component.minimumStock}.`;
+          });
+          
+          return `I found ${foundComponents.length} component${foundComponents.length > 1 ? 's' : ''} matching ${rawComponentName}. 
+          ${stockResponses.join("\n")}`;
+        } else {
+          // General information about the components
+          const infoResponses = foundComponents.map(component => {
+            return `${component.name} (${component.partNumber || 'No part number'}): ${component.description || 'No detailed description available'}. 
+            Current stock: ${component.currentStock} units.`;
+          });
+          
+          return `Found ${foundComponents.length} component${foundComponents.length > 1 ? 's' : ''} matching ${rawComponentName}:
+          ${infoResponses.join("\n\n")}`;
+        }
       } else {
-        return `I couldn't find a component matching "${rawComponentName}" in the inventory. 
+        // No component found in inventory - provide a helpful response
+        if (components.length > 0) {
+          // If we have components in the database but none matched, suggest checking inventory
+          const suggestions = components.map(c => c.name).slice(0, 5).join(", ");
+          return `I couldn't find a component matching "${rawComponentName}" in the inventory. 
           Would you like me to search using a different name format?`;
+        } else {
+          // No components at all - suggest adding some
+          return `I couldn't find any components in the inventory. Please add some components first to enable querying.`;
+        }
       }
+      
+      // Return early since we've either found a match or provided appropriate guidance
+      return `I couldn't find a component matching "${rawComponentName}" in the inventory. 
+      Would you like me to search using a different name format?`;
     } catch (dbError) {
       console.error('Error querying database for component:', dbError);
       return "I'm having trouble accessing the inventory data right now. Please try again in a moment.";
