@@ -74,13 +74,20 @@ export function ComponentDetailModal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {/* Component Image and Datasheet */}
               <div className="md:col-span-1">
-                <div className="bg-slate-100 rounded-lg p-2 flex items-center justify-center h-48">
+                <div className="bg-slate-100 rounded-lg p-2 flex items-center justify-center h-64 overflow-hidden">
                   {component.image ? (
-                    <img 
-                      src={component.image} 
-                      alt={component.name} 
-                      className="max-h-full max-w-full object-contain"
-                    />
+                    <div className="relative w-full h-full">
+                      <img 
+                        src={component.image} 
+                        alt={component.name} 
+                        className="max-h-full max-w-full object-contain mx-auto"
+                        onClick={() => window.open(component.image, '_blank')}
+                        style={{ cursor: 'zoom-in' }}
+                      />
+                      <div className="absolute bottom-0 right-0 bg-white bg-opacity-70 p-1 rounded-tl text-xs">
+                        Click to enlarge
+                      </div>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center text-slate-400">
                       <Info size={48} />
