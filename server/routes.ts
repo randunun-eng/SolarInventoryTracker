@@ -963,22 +963,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { key } = req.params;
       
+      console.log(`Getting settings for key: ${key}`);
+      
       // Get settings from database using SQL query
       const result = await db.execute(
         `SELECT value FROM settings WHERE key = $1`,
         [key]
       );
       
+      console.log(`Database result:`, result.rows);
+      
       // Check if settings exist
       if (!result || !result.rows || result.rows.length === 0) {
+        console.log(`No settings found for key: ${key}`);
         return res.status(404).json({ message: "Settings not found" });
       }
       
       // Make sure we return a parsed JSON object (not a string)
       let settingsValue = result.rows[0].value;
+      console.log(`Raw settings value:`, settingsValue);
+      
       if (typeof settingsValue === 'string') {
         try {
           settingsValue = JSON.parse(settingsValue);
+          console.log(`Parsed settings value:`, settingsValue);
         } catch (e) {
           console.error("Error parsing settings JSON:", e);
         }

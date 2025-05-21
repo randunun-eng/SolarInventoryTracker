@@ -100,12 +100,10 @@ export default function Settings() {
   // Fetch general settings data
   const { data: generalSettingsData, isLoading: isLoadingGeneralSettings, refetch: refetchGeneralSettings } = useQuery({
     queryKey: ["/api/settings/general"],
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Always consider data stale to force refetch
   });
-  
-  // Refresh data when component mounts
-  useEffect(() => {
-    refetchGeneralSettings();
-  }, []);
 
   // General settings form
   const generalForm = useForm<GeneralSettingsValues>({
@@ -125,7 +123,17 @@ export default function Settings() {
   // Update form values when settings are loaded
   useEffect(() => {
     if (generalSettingsData) {
-      generalForm.reset(generalSettingsData);
+      console.log("Resetting form with data:", generalSettingsData);
+      generalForm.reset({
+        companyName: generalSettingsData.companyName || "ElectroTrack Solar Solutions",
+        address: generalSettingsData.address || "123 Repair Street, Techville, CA 94123",
+        phone: generalSettingsData.phone || "(555) 123-4567",
+        email: generalSettingsData.email || "info@electrotrack.com",
+        website: generalSettingsData.website || "www.electrotrack.com",
+        taxRate: generalSettingsData.taxRate || "8.5",
+        laborRate: generalSettingsData.laborRate || "85.00",
+        currency: generalSettingsData.currency || "USD",
+      });
     }
   }, [generalSettingsData, generalForm]);
 
