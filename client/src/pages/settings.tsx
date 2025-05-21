@@ -169,6 +169,7 @@ export default function Settings() {
 
   // Submit handler for general settings
   const onGeneralSubmit = (data: GeneralSettingsValues) => {
+    setIsLoading(true);
     updateGeneralSettingsMutation.mutate(data);
   };
 
@@ -192,6 +193,7 @@ export default function Settings() {
 
   // Submit handler for notifications settings
   const onNotificationsSubmit = (data: NotificationsSettingsValues) => {
+    setIsLoading(true);
     updateNotificationSettingsMutation.mutate(data);
   };
 
