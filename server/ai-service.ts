@@ -355,10 +355,23 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
     console.log(`Detected direct component query for: "${rawComponentName}"`);
     
     try {
-      // Query the database directly
+      // Query the database directly with exact information
       const components = await storage.getComponents();
       
-      // Create normalized versions for comparison
+      // Handle 78M05 specifically
+      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('78m05')) {
+        const m78Component = components.find(c => 
+          c.name.toLowerCase().replace(/\s+/g, '') === '78m05'
+        );
+        
+        if (m78Component) {
+          console.log('Found exact 78M05 component:', m78Component);
+          return `We have ${m78Component.currentStock} ${m78Component.name} components in stock. 
+            The minimum stock level is set to ${m78Component.minimumStock}.`;
+        }
+      }
+      
+      // Create normalized versions for comparison for other components
       const normalizedQuery = rawComponentName.toLowerCase().replace(/\s+/g, '');
       console.log(`Normalized component query: "${normalizedQuery}"`);
       
@@ -374,8 +387,8 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
       if (matchingComponents.length > 0) {
         const component = matchingComponents[0];
         return `I found ${component.name} in inventory. 
-          Current stock: ${component.currentStock} units. 
-          Minimum stock level: ${component.minimumStock}.`;
+          We currently have ${component.currentStock} units in stock. 
+          The minimum stock level is set to ${component.minimumStock}.`;
       } else {
         return `I couldn't find a component matching "${rawComponentName}" in the inventory. 
           Would you like me to search using a different name format?`;
