@@ -208,7 +208,16 @@ export default function Suppliers() {
   }, [suppliers, searchTerm, selectedTag]);
 
   const handleAddSupplier = () => {
-    form.reset();
+    form.reset({
+      name: "",
+      contactName: "",
+      email: "",
+      phone: "",
+      website: "",
+      remarks: "",
+      tags: [],
+    });
+    setNewTag("");
     setIsAddSupplierOpen(true);
   };
 
@@ -616,25 +625,28 @@ export default function Suppliers() {
                 )}
               />
               
-              <DialogFooter className="mt-6">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsAddSupplierOpen(false)}
-                >
-                  Cancel
-                </Button>
+              <div className="mt-6 mb-3">
                 <Button 
                   type="submit" 
                   variant="default"
                   disabled={createSupplierMutation.isPending}
-                  className="gap-2"
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white py-8 text-xl font-bold"
                 >
                   {createSupplierMutation.isPending && 
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   }
-                  <Save className="h-4 w-4" />
-                  Save Supplier
+                  <Save className="h-6 w-6 mr-2" />
+                  ADD NEW SUPPLIER
+                </Button>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => setIsAddSupplierOpen(false)}
+                >
+                  Cancel
                 </Button>
               </DialogFooter>
             </form>
