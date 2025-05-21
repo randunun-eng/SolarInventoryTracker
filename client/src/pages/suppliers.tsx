@@ -46,7 +46,9 @@ import {
   User,
   Globe,
   FileText,
-  Save
+  Save,
+  Tag,
+  X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";

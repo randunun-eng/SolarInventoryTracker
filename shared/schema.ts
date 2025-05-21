@@ -28,6 +28,7 @@ export const suppliers = pgTable("suppliers", {
   address: text("address"),
   website: text("website"),
   remarks: text("remarks"),
+  tags: text("tags").array(),  // Add tags as an array of strings for better categorization
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).pick({
@@ -37,6 +38,7 @@ export const insertSupplierSchema = createInsertSchema(suppliers).pick({
   phone: true,
   website: true,
   remarks: true,
+  tags: true,
 });
 
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
