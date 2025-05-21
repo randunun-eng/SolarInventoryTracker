@@ -348,8 +348,8 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
   
   // Enhanced patterns for electronic components and technical queries
   
-  // Components - enhanced with common voltage regulators
-  const directComponentPattern = /(78\s*m\s*05|78\s*12|l\s*78\s*12|lm\s*317|l\s*7912|[\d]+[a-z][\d]+)/i;
+  // Components - enhanced with common voltage regulators (both positive and negative)
+  const directComponentPattern = /(78\s*m\s*05|78\s*12|l\s*78\s*12|lm\s*317|l\s*79\s*05|l\s*7905|l\s*7912|[\d]+[a-z][\d]+)/i;
   const directComponentMatch = command.match(directComponentPattern);
   
   // Technical parameter checks
@@ -374,6 +374,18 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
           return `The 7812 is a fixed positive voltage regulator that provides a stable +12 volt DC output. It's commonly used in power supply circuits where a regulated 12V output is needed.`;
         } else {
           return `The 7812 is a positive voltage regulator in the 78xx series. It provides a fixed +12V DC output. These components are typically available in TO-220 packages and are commonly used in power supply circuits.`;
+        }
+      }
+      
+      // Handle special case for L7905 negative voltage regulator
+      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7905')) {
+        console.log("Detected query for L7905 negative voltage regulator");
+        
+        // The L7905 is a fixed negative voltage regulator with -5V output
+        if (voltageQuery) {
+          return `The L7905 is a fixed negative voltage regulator that provides a stable -5 volt DC output. It's commonly used in power supply circuits where a regulated negative voltage is needed.`;
+        } else {
+          return `The L7905 is a negative voltage regulator in the 79xx series. It provides a fixed -5V DC output. These components are typically available in TO-220 packages and are commonly used in dual-supply power circuits.`;
         }
       }
       
