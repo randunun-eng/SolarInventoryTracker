@@ -652,16 +652,20 @@ export default function Suppliers() {
                 Update the details of this supplier
               </DialogDescription>
             </div>
+          </DialogHeader>
+          
+          {/* Floating save button */}
+          <div className="fixed bottom-8 right-8 z-50 shadow-xl rounded-full">
             <Button 
               type="submit"
               form="edit-supplier-form" 
               variant="default"
-              className="mt-3 sm:mt-0 bg-green-600 hover:bg-green-700 text-white font-medium"
+              className="h-16 px-6 rounded-full bg-green-600 hover:bg-green-700 text-white font-medium"
             >
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              <Save className="h-5 w-5 mr-2" />
+              SAVE CHANGES
             </Button>
-          </DialogHeader>
+          </div>
           <Form {...form}>
             <form id="edit-supplier-form" onSubmit={form.handleSubmit(onEditSubmit)} className="space-y-4">
               <FormField
