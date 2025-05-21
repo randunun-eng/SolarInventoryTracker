@@ -700,6 +700,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Chatbot Endpoints
   app.post("/api/chat", handleChatQuery);
   app.post("/api/ai/operation", handleAiOperation);
+  
+  // PDF datasheet upload and analysis endpoint
+  app.post("/api/analyze-datasheet", upload.single('datasheet'), async (req: Request, res: Response) => {
+    try {
+      const { componentName } = req.body;
+      
+      if (!componentName) {
+        return res.status(400).json({ error: 'Component name is required' });
+      }
+      
+      const pdfFile = req.file;
+      if (!pdfFile) {
+        return res.status(400).json({ error: 'PDF datasheet file is required' });
+      }
+      
+      console.log(`Processing uploaded datasheet for ${componentName}`);
+      console.log(`File saved at: ${pdfFile.path}`);
+      
+      // Process the datasheet using the AI service
+      const analysis = await analyzeDatasheet('', componentName, pdfFile.path);
+      
+      return res.json({
+        success: true,
+        componentName,
+        fileName: pdfFile.originalname,
+        filePath: pdfFile.path,
+        analysis
+      });
+    } catch (error) {
+      console.error('Error analyzing uploaded datasheet:', error);
+      return res.status(500).json({
+        error: 'Failed to analyze datasheet',
+        message: error.message
+      });
+    }
+  });
 
   const httpServer = createServer(app);
 
