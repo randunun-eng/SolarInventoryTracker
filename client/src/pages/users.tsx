@@ -208,7 +208,7 @@ export default function UsersPage() {
 
   const addUserMutation = useMutation({
     mutationFn: (newUser: UserFormValues) => 
-      apiRequest("/api/users", { method: "POST", body: newUser }),
+      apiRequest("POST", "/api/users", newUser),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
@@ -228,7 +228,7 @@ export default function UsersPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UserFormValues }) =>
-      apiRequest(`/api/users/${id}`, { method: "PUT", body: data }),
+      apiRequest("PUT", `/api/users/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
@@ -248,7 +248,7 @@ export default function UsersPage() {
 
   const deleteUserMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/users/${id}`, { method: "DELETE" }),
+      apiRequest("DELETE", `/api/users/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({

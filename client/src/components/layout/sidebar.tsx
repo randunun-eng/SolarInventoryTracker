@@ -110,7 +110,7 @@ export default function Layout({ children }: LayoutProps) {
 
           <SidebarSection title="SETTINGS">
             <SidebarLink href="/settings" icon={Settings} label="General" />
-            <SidebarLink href="/settings/users" icon={UserCog} label="Users" />
+            <SidebarLink href="/users" icon={UserCog} label="Users" />
           </SidebarSection>
         </nav>
       </aside>

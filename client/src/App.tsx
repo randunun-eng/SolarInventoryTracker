@@ -12,6 +12,7 @@ import StockAlerts from "@/pages/stock-alerts";
 import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
 import RepairStatus from "@/pages/repair-status";
+import Users from "@/pages/users";
 import { ChatBot } from "@/components/ai/chat-bot";
 import { VoiceTest } from "@/components/ai/voice-test";
 
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/repairs" component={Repairs} />
       <Route path="/repairs/:id/status" component={RepairStatus} />
       <Route path="/invoices" component={Invoices} />
+      <Route path="/users" component={Users} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
