@@ -856,24 +856,6 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values(user).returning();
-    return newUser;
-  }
-  
-  // Category Management
-  async getCategories(): Promise<Category[]> {
-    return db.select().from(categories);
-  }
-  
-  async getCategory(id: number): Promise<Category | undefined> {
-    const [category] = await db.select().from(categories).where(eq(categories.id, id));
-    return category;
   }
   
   async createCategory(category: InsertCategory): Promise<Category> {

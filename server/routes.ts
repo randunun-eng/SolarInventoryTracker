@@ -56,6 +56,7 @@ import {
   insertFaultTypeSchema,
   insertRepairSchema,
   insertUsedComponentSchema,
+  insertUserSchema,
   RepairStatusEnum,
   statusHistoryEntrySchema,
   type StatusHistoryEntry,
