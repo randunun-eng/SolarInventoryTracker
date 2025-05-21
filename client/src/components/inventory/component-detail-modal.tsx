@@ -76,17 +76,26 @@ export function ComponentDetailModal({
               <div className="md:col-span-1">
                 <div className="bg-slate-100 rounded-lg p-2 flex items-center justify-center h-64 overflow-hidden">
                   {component.image ? (
-                    <div className="relative w-full h-full">
-                      <img 
-                        src={component.image} 
-                        alt={component.name} 
-                        className="max-h-full max-w-full object-contain mx-auto"
-                        onClick={() => window.open(component.image, '_blank')}
-                        style={{ cursor: 'zoom-in' }}
-                      />
-                      <div className="absolute bottom-0 right-0 bg-white bg-opacity-70 p-1 rounded-tl text-xs">
-                        Click to enlarge
-                      </div>
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      {component.image.startsWith('blob:') ? (
+                        <div className="flex flex-col items-center text-amber-500">
+                          <Info size={48} />
+                          <span className="mt-2 text-sm text-center">Image preview unavailable<br/>Please save component first</span>
+                        </div>
+                      ) : (
+                        <>
+                          <img 
+                            src={component.image} 
+                            alt={component.name} 
+                            className="max-h-full max-w-full object-contain mx-auto"
+                            onClick={() => window.open(component.image, '_blank')}
+                            style={{ cursor: 'zoom-in' }}
+                          />
+                          <div className="absolute bottom-0 right-0 bg-white bg-opacity-70 p-1 rounded-tl text-xs">
+                            Click to enlarge
+                          </div>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center text-slate-400">

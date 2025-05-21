@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
@@ -6,6 +6,7 @@ import { handleChatQuery, handleAiOperation, analyzeDatasheet } from "./ai-servi
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import express from "express";
 
 // Configure multer storage for file uploads
 const uploadsDir = path.join(process.cwd(), 'uploads');
