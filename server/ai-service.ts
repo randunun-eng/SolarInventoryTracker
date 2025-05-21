@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI, type Content, type Part, GenerativeModel } from '@google/generative-ai';
 import { Request, Response } from 'express';
 import { storage } from './storage';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Initialize the Google AI client
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
@@ -629,9 +631,46 @@ export const handleChatQuery = async (req: Request, res: Response) => {
 };
 
 // Handle data operations requested by AI
+// Helper function to convert file to base64
+const fileToGenerativePart = async (filePath: string, mimeType: string): Promise<Part> => {
+  try {
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.error(`File does not exist: ${filePath}`);
+      return { text: `File not found: ${filePath}` };
+    }
+    
+    // Read file and convert to base64
+    const fileData = fs.readFileSync(filePath);
+    const base64Data = fileData.toString('base64');
+    
+    return {
+      inlineData: {
+        data: base64Data,
+        mimeType
+      }
+    };
+  } catch (error) {
+    console.error('Error converting file to base64:', error);
+    return { text: `Error processing file: ${error.message}` };
+  }
+};
+
 // Analyze datasheet content using AI with fallback to database
-export const analyzeDatasheet = async (datasheetUrl: string, componentName: string) => {
+export const analyzeDatasheet = async (datasheetUrl: string, componentName: string, pdfFilePath?: string) => {
   console.log(`Analyzing datasheet for ${componentName} at ${datasheetUrl}`);
+  
+  // Check if we have a PDF file path provided
+  let pdfContent: Part | null = null;
+  if (pdfFilePath) {
+    try {
+      console.log(`Attempting to read PDF file from: ${pdfFilePath}`);
+      pdfContent = await fileToGenerativePart(pdfFilePath, 'application/pdf');
+      console.log('Successfully converted PDF to base64 for AI analysis');
+    } catch (pdfError) {
+      console.error('Error processing PDF file:', pdfError);
+    }
+  }
 
   try {
     // First check if we can find this component in our database
@@ -736,9 +775,10 @@ export const analyzeDatasheet = async (datasheetUrl: string, componentName: stri
     }
     
     // If AI model is available, use it for analysis
-    const prompt = `
+    const parts: Part[] = [
+      { text: `
 You are a technical component analyst that specializes in electronic components.
-Please analyze the datasheet for the component "${componentName}" at URL: ${datasheetUrl}
+Please analyze the datasheet for the component "${componentName}".
 
 Focus particularly on the "Features" and "Description" sections at the top of the first page, as these contain the most critical component specifications.
 
@@ -752,7 +792,8 @@ Extract the following information in a structured JSON format:
 
 Be particularly attentive to voltage ratings, current capacity, and pin configurations as these are the most critical parameters for electronics repair work.
 
-If you cannot access the actual datasheet content using the URL, provide educated technical information about typical components with this name based on your knowledge.
+${datasheetUrl ? `A URL to the datasheet is provided: ${datasheetUrl}` : ''}
+${pdfContent ? 'I am also providing the PDF datasheet directly for analysis.' : ''}
 
 Format your response as valid JSON with the following structure:
 {
@@ -774,9 +815,23 @@ Format your response as valid JSON with the following structure:
   "commonIssues": [ ... ],
   "technicalNotes": "..."
 }
-`;
-
-    const result = await model.generateContent(prompt);
+` }
+    ];
+    
+    // Add PDF content if available
+    if (pdfContent) {
+      parts.push(pdfContent);
+    }
+    
+    console.log(`Sending request to Gemini AI with ${parts.length} parts (${pdfContent ? 'including PDF' : 'text only'})`);
+    
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 1500,
+      },
+    });
     const responseText = result.response.text();
     
     try {

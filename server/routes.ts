@@ -2,7 +2,31 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { handleChatQuery, handleAiOperation } from "./ai-service";
+import { handleChatQuery, handleAiOperation, analyzeDatasheet } from "./ai-service";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer storage for file uploads
+const uploadsDir = path.join(process.cwd(), 'uploads');
+// Create directory if it doesn't exist
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage_multer = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function(req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ 
+  storage: storage_multer,
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB file size limit
+});
 import { 
   insertCategorySchema, 
   insertSupplierSchema, 
