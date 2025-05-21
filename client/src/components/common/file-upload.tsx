@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UploadCloud, X, FileText, Image, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface FileUploadProps {
   label: string;
@@ -14,6 +15,7 @@ interface FileUploadProps {
   onUploadComplete: (urls: string[]) => void;
   currentFiles?: string[];
   isImage?: boolean;
+  fieldName?: string; // image or datasheet
 }
 
 export default function FileUpload({
@@ -25,6 +27,7 @@ export default function FileUpload({
   onUploadComplete,
   currentFiles = [],
   isImage = false,
+  fieldName = "file",
 }: FileUploadProps) {
   const { toast } = useToast();
   const [files, setFiles] = useState<string[]>(currentFiles);
@@ -61,23 +64,42 @@ export default function FileUpload({
     setUploading(true);
     
     try {
-      // In a real implementation, you would upload these files to a server
-      // For this implementation, we'll just create object URLs as placeholders
+      // Upload the file to the server
       const newUrls: string[] = [];
-      
-      // Simulate upload progress
       const totalFiles = selectedFiles.length;
+      
       for (let i = 0; i < totalFiles; i++) {
-        // Simulate upload progress
-        await new Promise(r => setTimeout(r, 500));
-        setProgress(Math.round(((i + 1) / totalFiles) * 100));
+        // Create form data
+        const formData = new FormData();
+        formData.append(fieldName, selectedFiles[i]);
         
-        // Create a temporary URL for the file
-        const url = URL.createObjectURL(selectedFiles[i]);
-        newUrls.push(url);
+        // Update progress
+        setProgress(Math.round(((i + 0.5) / totalFiles) * 100));
+        
+        try {
+          // Direct fetch to server upload endpoint
+          const response = await fetch(`/api/upload/${fieldName}`, {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+          }
+          
+          const result = await response.json();
+          newUrls.push(result.url);
+        } catch (uploadError) {
+          console.error('Upload error:', uploadError);
+          // Fallback to temporary blob URL if server upload fails
+          const blobUrl = URL.createObjectURL(selectedFiles[i]);
+          newUrls.push(blobUrl);
+        }
+        
+        setProgress(Math.round(((i + 1) / totalFiles) * 100));
       }
       
-      const updatedFiles = [...files, ...newUrls];
+      const updatedFiles = multiple ? [...files, ...newUrls] : newUrls;
       setFiles(updatedFiles);
       onUploadComplete(updatedFiles);
       
