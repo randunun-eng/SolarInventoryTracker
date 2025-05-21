@@ -159,9 +159,10 @@ export default function Settings() {
       });
     },
     onError: (error: any) => {
+      console.error("Error updating settings:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update settings.",
+        description: "Failed to update settings. Please try again.",
         variant: "destructive",
       });
     },

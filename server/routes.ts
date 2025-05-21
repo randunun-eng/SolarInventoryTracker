@@ -974,7 +974,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Settings not found" });
       }
       
-      res.json(result.rows[0].value);
+      // Make sure we return a parsed JSON object (not a string)
+      let settingsValue = result.rows[0].value;
+      if (typeof settingsValue === 'string') {
+        try {
+          settingsValue = JSON.parse(settingsValue);
+        } catch (e) {
+          console.error("Error parsing settings JSON:", e);
+        }
+      }
+      
+      res.json(settingsValue);
     } catch (error) {
       console.error("Error fetching settings:", error);
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -1000,7 +1010,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to update settings" });
       }
       
-      res.json(result.rows[0].value);
+      // Make sure we return a parsed JSON object (not a string)
+      let settingsValue = result.rows[0].value;
+      if (typeof settingsValue === 'string') {
+        try {
+          settingsValue = JSON.parse(settingsValue);
+        } catch (e) {
+          console.error("Error parsing settings JSON:", e);
+        }
+      }
+      
+      res.json(settingsValue);
     } catch (error) {
       console.error("Error updating settings:", error);
       res.status(500).json({ error: "Failed to update settings" });
