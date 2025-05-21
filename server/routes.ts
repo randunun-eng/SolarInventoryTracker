@@ -44,6 +44,48 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve static files from uploads directory
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  
+  // File upload endpoints
+  app.post("/api/upload/image", upload.single('image'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+      
+      // Return the file path that can be used to access the image
+      const imageUrl = `/uploads/${req.file.filename}`;
+      res.json({ 
+        url: imageUrl,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ error: "Failed to upload image" });
+    }
+  });
+
+  app.post("/api/upload/datasheet", upload.single('datasheet'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No datasheet file provided" });
+      }
+      
+      // Return the file path that can be used to access the datasheet
+      const datasheetUrl = `/uploads/${req.file.filename}`;
+      res.json({ 
+        url: datasheetUrl,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Error uploading datasheet:", error);
+      res.status(500).json({ error: "Failed to upload datasheet" });
+    }
+  });
+  
   // put application routes here
   // prefix all routes with /api
 
