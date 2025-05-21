@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, type Content, type Part } from '@google/generative-ai';
+import { GoogleGenerativeAI, type Content, type Part, GenerativeModel } from '@google/generative-ai';
 import { Request, Response } from 'express';
 import { storage } from './storage';
 
@@ -6,17 +6,19 @@ import { storage } from './storage';
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
 
 // Initialize AI model with fallback options
-let model;
+let model: GenerativeModel | null = null;
 try {
   // Try to use gemini-1.5-pro first
   model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+  console.log('Successfully initialized gemini-1.5-pro model');
 } catch (error) {
   console.warn('Failed to initialize gemini-1.5-pro, falling back to gemini-pro');
   try {
     // Fall back to gemini-pro
     model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    console.log('Successfully initialized gemini-pro model');
   } catch (fallbackError) {
-    console.error('Failed to initialize AI models:', fallbackError);
+    console.error('Failed to initialize AI models, will use database fallback mode');
     // We'll handle the null model case in our processing functions
   }
 }
@@ -342,10 +344,79 @@ const generateReportData = async (reportType: string) => {
 const processVoiceCommand = async (chatHistory: Content[], command: string) => {
   // First check if this is a query about inventory components
   // that we can answer directly from the database
-  const componentMatch = command.match(/how many (\w+)\s*(\w*)\s*components?/i);
+  console.log(`Processing voice command: "${command}"`);
+  
+  // Check for direct component number query like "78M05" or "78 m 05"
+  const directComponentPattern = /(78\s*m\s*05|lm\s*317|l\s*7912)/i;
+  const directComponentMatch = command.match(directComponentPattern);
+  
+  if (directComponentMatch) {
+    const rawComponentName = directComponentMatch[0];
+    console.log(`Detected direct component query for: "${rawComponentName}"`);
+    
+    try {
+      // Query the database directly
+      const components = await storage.getComponents();
+      
+      // Create normalized versions for comparison
+      const normalizedQuery = rawComponentName.toLowerCase().replace(/\s+/g, '');
+      console.log(`Normalized component query: "${normalizedQuery}"`);
+      
+      // Find components that match when spaces are removed
+      const matchingComponents = components.filter(c => {
+        const normalizedName = c.name.toLowerCase().replace(/\s+/g, '');
+        return normalizedName.includes(normalizedQuery) || 
+               normalizedQuery.includes(normalizedName);
+      });
+      
+      console.log(`Found ${matchingComponents.length} potential matches`);
+      
+      if (matchingComponents.length > 0) {
+        const component = matchingComponents[0];
+        return `I found ${component.name} in inventory. 
+          Current stock: ${component.currentStock} units. 
+          Minimum stock level: ${component.minimumStock}.`;
+      } else {
+        return `I couldn't find a component matching "${rawComponentName}" in the inventory. 
+          Would you like me to search using a different name format?`;
+      }
+    } catch (dbError) {
+      console.error('Error querying database for component:', dbError);
+      return "I'm having trouble accessing the inventory data right now. Please try again in a moment.";
+    }
+  }
+  
+  // More general pattern matching for component queries
+  const componentMatch = command.match(/how many (\w+)[ \-]?(\w*)[ \-]?(\w*)\s*components?/i);
   if (componentMatch) {
-    const componentName = componentMatch[1] + (componentMatch[2] ? ' ' + componentMatch[2] : '');
-    console.log(`Detected component query for: ${componentName}`);
+    // Build component name from matched parts, filtering out empty parts
+    const parts = [componentMatch[1], componentMatch[2], componentMatch[3]].filter(part => part);
+    const componentName = parts.join(' ');
+    console.log(`Detected component query for: "${componentName}"`);
+    
+    // Check for numeric components with various patterns
+    if (componentName.includes('78')) {
+      console.log("Detected component with '78' - checking for voltage regulator");
+      
+      try {
+        // Query the database directly for 78M05 or similar
+        const components = await storage.getComponents();
+        
+        // Search for any component containing 78
+        const matchingComponents = components.filter(c => 
+          c.name.toLowerCase().replace(/\s+/g, '').includes('78')
+        );
+        
+        if (matchingComponents.length > 0) {
+          const component = matchingComponents[0];
+          return `I found ${component.name} in inventory. 
+            Current stock: ${component.currentStock} units. 
+            Minimum stock level: ${component.minimumStock}.`;
+        }
+      } catch (dbError) {
+        console.error('Error querying database for component with 78:', dbError);
+      }
+    }
     
     try {
       // Query the database directly
