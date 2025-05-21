@@ -340,10 +340,69 @@ const generateReportData = async (reportType: string) => {
 
 // Process voice commands and optimize response for speech
 const processVoiceCommand = async (chatHistory: Content[], command: string) => {
-  // If no model is available, return a graceful error message
+  // First check if this is a query about inventory components
+  // that we can answer directly from the database
+  const componentMatch = command.match(/how many (\w+)\s*(\w*)\s*components?/i);
+  if (componentMatch) {
+    const componentName = componentMatch[1] + (componentMatch[2] ? ' ' + componentMatch[2] : '');
+    console.log(`Detected component query for: ${componentName}`);
+    
+    try {
+      // Query the database directly
+      const components = await storage.getComponents();
+      const matchingComponents = components.filter(c => 
+        c.name.toLowerCase().includes(componentName.toLowerCase())
+      );
+      
+      if (matchingComponents.length > 0) {
+        const component = matchingComponents[0];
+        return `I found ${matchingComponents.length} component${matchingComponents.length > 1 ? 's' : ''} matching ${componentName}. 
+          The ${component.name} has ${component.currentStock} units in stock. 
+          The minimum stock level is set to ${component.minimumStock}.`;
+      } else {
+        return `I couldn't find any components matching "${componentName}" in the inventory. 
+          Would you like to add this component to the inventory?`;
+      }
+    } catch (dbError) {
+      console.error('Error querying database for component:', dbError);
+    }
+  }
+  
+  // Check other common queries that we can answer without the AI API
+  if (command.toLowerCase().includes('low stock')) {
+    try {
+      const lowStockComponents = await storage.getLowStockComponents();
+      if (lowStockComponents.length === 0) {
+        return "Good news! There are no components with low stock at the moment.";
+      } else {
+        return `There are ${lowStockComponents.length} components with low stock. The most critical ones are: ${
+          lowStockComponents.slice(0, 3).map(c => c.name).join(', ')
+        }.`;
+      }
+    } catch (dbError) {
+      console.error('Error querying database for low stock:', dbError);
+    }
+  }
+  
+  if (command.toLowerCase().includes('active repair') || command.toLowerCase().includes('ongoing repair')) {
+    try {
+      const activeRepairs = await storage.getActiveRepairs();
+      if (activeRepairs.length === 0) {
+        return "There are no active repairs at the moment.";
+      } else {
+        return `There are ${activeRepairs.length} active repairs in the system. The most recent ones are for clients: ${
+          activeRepairs.slice(0, 3).map(r => r.clientName || 'Unknown').join(', ')
+        }.`;
+      }
+    } catch (dbError) {
+      console.error('Error querying database for active repairs:', dbError);
+    }
+  }
+  
+  // If no model is available or if we hit an API limitation, return a helpful response
   if (!model) {
-    console.error('AI model not available for voice command. API key might be missing or invalid.');
-    return 'I\'m sorry, but the voice assistant is currently unavailable. Please check your API key configuration.';
+    console.log('AI model not available for voice command. Providing database-backed response.');
+    return 'I can help with basic inventory and repair questions without the AI service. Try asking about specific components, low stock items, or active repairs.';
   }
   
   const systemContext = `
@@ -379,7 +438,13 @@ For most requests about the system, give one concise, informative answer.
     return result.response.text();
   } catch (error) {
     console.error('Error processing voice command:', error);
-    return 'Sorry, I could not process your voice command. Please try again with a different question or check your API key.';
+    
+    // If we hit API quota limits, return a more helpful message
+    if (error.message && error.message.includes('quota')) {
+      return 'I\'m sorry, but the AI service has reached its quota limit. I can still help with basic inventory and repair questions. Try asking about specific components, low stock items, or active repairs.';
+    }
+    
+    return 'I can still help with basic questions even without the AI service. Try asking about specific components, low stock items, or active repairs.';
   }
 };
 
