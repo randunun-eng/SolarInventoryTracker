@@ -73,6 +73,7 @@ export default function Suppliers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
   const [isEditSupplierOpen, setIsEditSupplierOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<{
@@ -171,12 +172,39 @@ export default function Suppliers() {
     },
   });
 
-  // Filtered suppliers based on search term
-  const filteredSuppliers = suppliers ? suppliers.filter(supplier => 
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (supplier.contactName && supplier.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) : [];
+  // Get all unique tags from suppliers
+  const allTags = useMemo(() => {
+    if (!suppliers) return [];
+    
+    const tagSet = new Set<string>();
+    suppliers.forEach(supplier => {
+      if (supplier.tags && supplier.tags.length > 0) {
+        supplier.tags.forEach(tag => tagSet.add(tag));
+      }
+    });
+    
+    return Array.from(tagSet).sort();
+  }, [suppliers]);
+
+  // Filtered suppliers based on search term and selected tag
+  const filteredSuppliers = useMemo(() => {
+    if (!suppliers) return [];
+    
+    return suppliers.filter(supplier => {
+      // Filter by search term
+      const matchesSearch = !searchTerm || 
+        supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (supplier.contactName && supplier.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (supplier.tags && supplier.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
+      
+      // Filter by selected tag
+      const matchesTag = !selectedTag || 
+        (supplier.tags && supplier.tags.includes(selectedTag));
+      
+      return matchesSearch && matchesTag;
+    });
+  }, [suppliers, searchTerm, selectedTag]);
 
   const handleAddSupplier = () => {
     form.reset();
@@ -263,6 +291,41 @@ export default function Suppliers() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Tag filter section */}
+          {allTags.length > 0 && (
+            <div className="mb-4">
+              <div className="text-sm font-medium mb-2">Filter by tag:</div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTag(null)}
+                  className={`px-3 py-1 rounded-full text-xs flex items-center ${
+                    selectedTag === null 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  All
+                </button>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedTag(tag)}
+                    className={`px-3 py-1 rounded-full text-xs flex items-center ${
+                      selectedTag === tag 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-primary/10 text-primary hover:bg-primary/20'
+                    }`}
+                  >
+                    <Tag className="h-3 w-3 mr-1" />
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
           {isLoadingSuppliers ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -283,7 +346,24 @@ export default function Suppliers() {
                 <TableBody>
                   {filteredSuppliers.map((supplier) => (
                     <TableRow key={supplier.id}>
-                      <TableCell className="font-medium">{supplier.name}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{supplier.name}</div>
+                          {supplier.tags && supplier.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {supplier.tags.map((tag, i) => (
+                                <div 
+                                  key={i} 
+                                  className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs flex items-center"
+                                >
+                                  <Tag className="h-2 w-2 mr-1" />
+                                  {tag}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{supplier.contactName || "—"}</TableCell>
                       <TableCell>{supplier.email || "—"}</TableCell>
                       <TableCell>{supplier.phone || "—"}</TableCell>
@@ -669,6 +749,76 @@ export default function Suppliers() {
                           className="pl-10 resize-none min-h-[80px]" 
                           {...field} 
                         />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags</FormLabel>
+                    <FormControl>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {field.value?.map((tag, index) => (
+                            <div 
+                              key={index} 
+                              className="flex items-center bg-primary/10 text-primary rounded-full px-3 py-1 text-sm"
+                            >
+                              <Tag className="h-3 w-3 mr-1" />
+                              <span>{tag}</span>
+                              <button
+                                type="button"
+                                className="ml-2 text-primary hover:text-primary/80"
+                                onClick={() => {
+                                  const newTags = [...field.value];
+                                  newTags.splice(index, 1);
+                                  field.onChange(newTags);
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex">
+                          <Input
+                            placeholder="Add tag (press Enter)"
+                            value={newTag}
+                            onChange={(e) => setNewTag(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newTag.trim() !== '') {
+                                e.preventDefault();
+                                const updatedTags = [...(field.value || []), newTag.trim()];
+                                field.onChange(updatedTags);
+                                setNewTag('');
+                              }
+                            }}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="ml-2"
+                            onClick={() => {
+                              if (newTag.trim() !== '') {
+                                const updatedTags = [...(field.value || []), newTag.trim()];
+                                field.onChange(updatedTags);
+                                setNewTag('');
+                              }
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Add tags like "electronics", "china", "repair-parts" to easily find suppliers later
+                        </p>
                       </div>
                     </FormControl>
                     <FormMessage />
