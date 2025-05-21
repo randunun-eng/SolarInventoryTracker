@@ -157,14 +157,11 @@ export default function Settings() {
       // Invalidate cache to update UI
       queryClient.invalidateQueries({ queryKey: ["/api/settings/general"] });
       toast({
-        title: "Settings updated",
         description: "Your general settings have been successfully updated.",
       });
     },
-    onError: (error: any) => {
-      console.error("Error updating settings:", error);
+    onError: () => {
       toast({
-        title: "Error",
         description: "Failed to update settings. Please try again.",
         variant: "destructive",
       });
@@ -181,15 +178,15 @@ export default function Settings() {
     mutationFn: (settings: NotificationsSettingsValues) => 
       apiRequest("PUT", "/api/settings/notifications", settings),
     onSuccess: () => {
+      // Invalidate cache to update UI
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/notifications"] });
       toast({
-        title: "Notification settings updated",
         description: "Your notification preferences have been saved.",
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update notification settings.",
+        description: "Failed to update notification settings. Please try again.",
         variant: "destructive",
       });
     },
