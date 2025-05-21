@@ -149,10 +149,13 @@ export default function Settings() {
   }, [notificationSettingsData, notificationsForm]);
 
   // General settings mutation
+  const queryClient = useQueryClient();
   const updateGeneralSettingsMutation = useMutation({
     mutationFn: (settings: GeneralSettingsValues) => 
       apiRequest("PUT", "/api/settings/general", settings),
     onSuccess: () => {
+      // Invalidate cache to update UI
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/general"] });
       toast({
         title: "Settings updated",
         description: "Your general settings have been successfully updated.",
