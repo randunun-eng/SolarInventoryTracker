@@ -642,22 +642,47 @@ export const analyzeDatasheet = async (datasheetUrl: string, componentName: stri
         }
       }
       
-      // Build a response from the database
+      // Get a more detailed understanding of component from description field
+      // For voltage regulators, parse the description for voltage values
+      let voltage = null;
+      let voltageMatch = null;
+      
+      if (component.description) {
+        // Look for voltage specifications like "+5V", "5VDC", etc.
+        voltageMatch = component.description.match(/([+-]?\d+(?:\.\d+)?)\s*v(?:olt)?(?:dc|ac)?/i);
+        if (voltageMatch) {
+          voltage = voltageMatch[1];
+        }
+      }
+      
+      // Build a more detailed response from the database
       const dbResponse = {
         specifications: {
           name: component.name,
           partNumber: component.partNumber || "Not specified",
           category: categoryName,
-          description: component.description || "Not available"
+          description: component.description || "Not available",
+          key_features: [
+            `${categoryName} component`,
+            component.description || "",
+            `Package: ${component.partNumber || "Not specified"}`
+          ],
+          voltage_rating: voltage ? `${voltage}V` : "Not specified in database",
+          current_capacity: "Not specified in database"
         },
         package: component.partNumber || "Unknown",
         operatingParameters: {
-          notes: component.description || "No detailed operating parameters available"
+          notes: component.description || "No detailed operating parameters available",
+          input_voltage_range: categoryName.toLowerCase().includes("regulator") ? 
+            "Typically 1.5-2V higher than output voltage" : "Not specified",
+          output_voltage: voltage ? `${voltage}V` : "Not specified in database",
+          max_current: "Not specified in database",
+          temperature_range: "Not specified in database"
         },
         applications: [categoryName],
         alternatives: [],
         commonIssues: [],
-        technicalNotes: `This component information was retrieved from the local database. For more details, please consult the datasheet.`,
+        technicalNotes: `This component information was retrieved from the local database. The description field "${component.description}" contains key technical details. For more details, please consult the datasheet.`,
         databaseSource: true
       };
       
@@ -691,21 +716,35 @@ export const analyzeDatasheet = async (datasheetUrl: string, componentName: stri
 You are a technical component analyst that specializes in electronic components.
 Please analyze the datasheet for the component "${componentName}" at URL: ${datasheetUrl}
 
+Focus particularly on the "Features" and "Description" sections at the top of the first page, as these contain the most critical component specifications.
+
 Extract the following information in a structured JSON format:
-1. Key specifications
-2. Package type
+1. Key specifications from the Features/Description section
+2. Package type (e.g., TO-220, SOT-23, DIP, etc.)
 3. Operating parameters (voltage, current, temperature range)
-4. Common applications
+4. Common applications mentioned in the datasheet
 5. Alternative/compatible components that could be used as replacements
 6. Common issues or failure modes
+
+Be particularly attentive to voltage ratings, current capacity, and pin configurations as these are the most critical parameters for electronics repair work.
 
 If you cannot access the actual datasheet content using the URL, provide educated technical information about typical components with this name based on your knowledge.
 
 Format your response as valid JSON with the following structure:
 {
-  "specifications": { ... },
+  "specifications": { 
+    "key_features": [ ... ],
+    "description": "...",
+    "voltage_rating": "...",
+    "current_capacity": "..."
+  },
   "package": "...",
-  "operatingParameters": { ... },
+  "operatingParameters": { 
+    "input_voltage_range": "...",
+    "output_voltage": "...",
+    "max_current": "...",
+    "temperature_range": "..."
+  },
   "applications": [ ... ],
   "alternatives": [ ... ],
   "commonIssues": [ ... ],
