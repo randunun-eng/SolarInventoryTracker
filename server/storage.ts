@@ -15,9 +15,12 @@ import {
 // you might need
 export interface IStorage {
   // User management
+  getUsers(): Promise<User[]>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Category management
   getCategories(): Promise<Category[]>;
@@ -375,6 +378,10 @@ export class MemStorage implements IStorage {
   }
 
   // User Management
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -386,10 +393,48 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(user: InsertUser): Promise<User> {
+    // Check if username already exists
+    const existingUser = await this.getUserByUsername(user.username);
+    if (existingUser) {
+      throw new Error(`Username "${user.username}" is already taken.`);
+    }
+    
     const id = this.currentUserId++;
     const newUser: User = { ...user, id };
     this.users.set(id, newUser);
     return newUser;
+  }
+  
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    // Check if username is being changed and is not already taken
+    if (userData.username && userData.username !== user.username) {
+      const existingUser = await this.getUserByUsername(userData.username);
+      if (existingUser) {
+        throw new Error(`Username "${userData.username}" is already taken.`);
+      }
+    }
+    
+    const updatedUser: User = { ...user, ...userData };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    // Don't allow deleting the last admin user
+    const users = Array.from(this.users.values());
+    const admins = users.filter(user => user.role === 'Admin');
+    
+    const userToDelete = this.users.get(id);
+    if (!userToDelete) return false;
+    
+    if (userToDelete.role === 'Admin' && admins.length <= 1) {
+      throw new Error('Cannot delete the last admin user');
+    }
+    
+    return this.users.delete(id);
   }
   
   // Category Management
@@ -731,9 +776,84 @@ import {
 } from "@shared/schema";
 
 export class DatabaseStorage implements IStorage {
+  // User Management
+  async getUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+  
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    // Check if username already exists
+    const existingUser = await this.getUserByUsername(userData.username);
+    if (existingUser) {
+      throw new Error(`Username "${userData.username}" is already taken`);
+    }
+    
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    // Check if user exists
+    const existingUser = await this.getUser(id);
+    if (!existingUser) {
+      return undefined;
+    }
+    
+    // Check if username is being changed and not already taken
+    if (userData.username && userData.username !== existingUser.username) {
+      const userWithSameUsername = await this.getUserByUsername(userData.username);
+      if (userWithSameUsername) {
+        throw new Error(`Username "${userData.username}" is already taken`);
+      }
+    }
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    // Get all admin users
+    const adminUsers = await db
+      .select()
+      .from(users)
+      .where(eq(users.role, 'Admin'));
+    
+    // Get the user to delete
+    const userToDelete = await this.getUser(id);
+    if (!userToDelete) {
+      return false;
+    }
+    
+    // Check if trying to delete the last admin
+    if (userToDelete.role === 'Admin' && adminUsers.length <= 1) {
+      throw new Error('Cannot delete the last admin user');
+    }
+    
+    // Delete the user
+    const result = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning();
+    
+    return result.length > 0;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
