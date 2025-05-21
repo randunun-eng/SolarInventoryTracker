@@ -13,3 +13,9 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle({ client: pool, schema });
+
+// Add execute method for raw SQL queries
+// @ts-ignore - Adding execute method to db object
+db.execute = async (query: string, params: any[] = []) => {
+  return await pool.query(query, params);
+};

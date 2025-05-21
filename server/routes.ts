@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
 import { handleChatQuery, handleAiOperation, analyzeDatasheet } from "./ai-service";
 import multer from "multer";
 import path from "path";
@@ -962,15 +963,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { key } = req.params;
       
-      // Get settings from database using direct SQL query
-      const result = await db.$queryRaw`SELECT value FROM settings WHERE key = ${key}`;
+      // Get settings from database using SQL query
+      const result = await db.execute(
+        `SELECT value FROM settings WHERE key = $1`,
+        [key]
+      );
       
       // Check if settings exist
-      if (!result || !Array.isArray(result) || result.length === 0) {
+      if (!result || !result.rows || result.rows.length === 0) {
         return res.status(404).json({ message: "Settings not found" });
       }
       
-      res.json(result[0].value);
+      res.json(result.rows[0].value);
     } catch (error) {
       console.error("Error fetching settings:", error);
       res.status(500).json({ error: "Failed to fetch settings" });
@@ -983,19 +987,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const value = req.body;
       
       // Update or insert settings
-      const result = await db.$queryRaw`
-        INSERT INTO settings (key, value, updated_at) 
-        VALUES (${key}, ${JSON.stringify(value)}, CURRENT_TIMESTAMP)
-        ON CONFLICT (key) 
-        DO UPDATE SET value = ${JSON.stringify(value)}, updated_at = CURRENT_TIMESTAMP
-        RETURNING *
-      `;
+      const result = await db.execute(
+        `INSERT INTO settings (key, value, updated_at) 
+         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         ON CONFLICT (key) 
+         DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP
+         RETURNING *`,
+        [key, JSON.stringify(value)]
+      );
       
-      if (!result || !Array.isArray(result) || result.length === 0) {
+      if (!result || !result.rows || result.rows.length === 0) {
         return res.status(500).json({ error: "Failed to update settings" });
       }
       
-      res.json(result[0].value);
+      res.json(result.rows[0].value);
     } catch (error) {
       console.error("Error updating settings:", error);
       res.status(500).json({ error: "Failed to update settings" });

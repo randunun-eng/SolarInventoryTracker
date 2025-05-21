@@ -124,6 +124,11 @@ export default function Settings() {
     }
   }, [generalSettingsData, generalForm]);
 
+  // Fetch notifications settings
+  const { data: notificationSettingsData } = useQuery({
+    queryKey: ["/api/settings/notifications"],
+  });
+  
   // Notifications settings form
   const notificationsForm = useForm<NotificationsSettingsValues>({
     resolver: zodResolver(notificationsSettingsSchema),
@@ -135,6 +140,13 @@ export default function Settings() {
       invoiceReminders: true,
     },
   });
+  
+  // Update notification form when data is loaded
+  useEffect(() => {
+    if (notificationSettingsData) {
+      notificationsForm.reset(notificationSettingsData);
+    }
+  }, [notificationSettingsData, notificationsForm]);
 
   // General settings mutation
   const updateGeneralSettingsMutation = useMutation({
@@ -160,18 +172,28 @@ export default function Settings() {
     updateGeneralSettingsMutation.mutate(data);
   };
 
-  // Submit handler for notifications settings
-  const onNotificationsSubmit = (data: NotificationsSettingsValues) => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+  // Notifications settings mutation
+  const updateNotificationSettingsMutation = useMutation({
+    mutationFn: (settings: NotificationsSettingsValues) => 
+      apiRequest("PUT", "/api/settings/notifications", settings),
+    onSuccess: () => {
       toast({
         title: "Notification settings updated",
         description: "Your notification preferences have been saved.",
       });
-      console.log("Notification settings submitted:", data);
-    }, 1000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update notification settings.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Submit handler for notifications settings
+  const onNotificationsSubmit = (data: NotificationsSettingsValues) => {
+    updateNotificationSettingsMutation.mutate(data);
   };
 
   return (
