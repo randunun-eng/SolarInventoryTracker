@@ -64,6 +64,7 @@ const supplierFormSchema = insertSupplierSchema.extend({
   phone: z.string().optional().or(z.literal("")),
   website: z.string().url("Invalid URL format").optional().or(z.literal("")),
   remarks: z.string().optional().or(z.literal("")),
+  tags: z.array(z.string()).optional().default([]),
 });
 
 type SupplierFormValues = z.infer<typeof supplierFormSchema>;
@@ -82,7 +83,11 @@ export default function Suppliers() {
     phone?: string;
     website?: string;
     remarks?: string;
+    tags?: string[];
   } | null>(null);
+  
+  // For tag management
+  const [newTag, setNewTag] = useState("");
 
   // Fetch suppliers
   const { data: suppliers, isLoading: isLoadingSuppliers } = useQuery({
@@ -99,6 +104,7 @@ export default function Suppliers() {
       phone: "",
       website: "",
       remarks: "",
+      tags: [],
     },
   });
 
@@ -185,6 +191,7 @@ export default function Suppliers() {
     phone?: string;
     website?: string;
     remarks?: string;
+    tags?: string[];
   }) => {
     setEditingSupplier(supplier);
     form.reset({
@@ -194,6 +201,7 @@ export default function Suppliers() {
       phone: supplier.phone || "",
       website: supplier.website || "",
       remarks: supplier.remarks || "",
+      tags: supplier.tags || [],
     });
     setIsEditSupplierOpen(true);
   };
@@ -449,6 +457,76 @@ export default function Suppliers() {
                           className="pl-10 resize-none min-h-[80px]" 
                           {...field} 
                         />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags</FormLabel>
+                    <FormControl>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {field.value?.map((tag, index) => (
+                            <div 
+                              key={index} 
+                              className="flex items-center bg-primary/10 text-primary rounded-full px-3 py-1 text-sm"
+                            >
+                              <Tag className="h-3 w-3 mr-1" />
+                              <span>{tag}</span>
+                              <button
+                                type="button"
+                                className="ml-2 text-primary hover:text-primary/80"
+                                onClick={() => {
+                                  const newTags = [...field.value];
+                                  newTags.splice(index, 1);
+                                  field.onChange(newTags);
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex">
+                          <Input
+                            placeholder="Add tag (press Enter)"
+                            value={newTag}
+                            onChange={(e) => setNewTag(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newTag.trim() !== '') {
+                                e.preventDefault();
+                                const updatedTags = [...(field.value || []), newTag.trim()];
+                                field.onChange(updatedTags);
+                                setNewTag('');
+                              }
+                            }}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="ml-2"
+                            onClick={() => {
+                              if (newTag.trim() !== '') {
+                                const updatedTags = [...(field.value || []), newTag.trim()];
+                                field.onChange(updatedTags);
+                                setNewTag('');
+                              }
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Add tags like "electronics", "china", "repair-parts" to easily find suppliers later
+                        </p>
                       </div>
                     </FormControl>
                     <FormMessage />
