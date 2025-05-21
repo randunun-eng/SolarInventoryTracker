@@ -644,7 +644,7 @@ export default function Suppliers() {
 
       {/* Edit Supplier Dialog */}
       <Dialog open={isEditSupplierOpen} onOpenChange={setIsEditSupplierOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-auto">
           <DialogHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-2">
             <div>
               <DialogTitle>Edit Supplier</DialogTitle>
@@ -653,19 +653,6 @@ export default function Suppliers() {
               </DialogDescription>
             </div>
           </DialogHeader>
-          
-          {/* Floating save button */}
-          <div className="fixed bottom-8 right-8 z-50 shadow-xl rounded-full">
-            <Button 
-              type="submit"
-              form="edit-supplier-form" 
-              variant="default"
-              className="h-16 px-6 rounded-full bg-green-600 hover:bg-green-700 text-white font-medium"
-            >
-              <Save className="h-5 w-5 mr-2" />
-              SAVE CHANGES
-            </Button>
-          </div>
           <Form {...form}>
             <form id="edit-supplier-form" onSubmit={form.handleSubmit(onEditSubmit)} className="space-y-4">
               <FormField
@@ -843,25 +830,18 @@ export default function Suppliers() {
                 )}
               />
               
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-6 mb-3">
-                <div className="font-medium text-blue-800 mb-2 flex items-center">
-                  <Info className="h-5 w-5 mr-2" />
-                  Ready to save your changes?
-                </div>
-                <p className="text-blue-700 text-sm mb-3">
-                  Click the button below to update this supplier with your changes, including any new tags you've added.
-                </p>
+              <div className="mt-6 mb-3">
                 <Button 
                   type="submit" 
                   variant="default"
                   disabled={updateSupplierMutation.isPending}
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white py-6 text-lg font-medium"
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white py-8 text-xl font-bold"
                 >
                   {updateSupplierMutation.isPending && 
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   }
-                  <Save className="h-5 w-5 mr-1" />
-                  SAVE ALL CHANGES
+                  <Save className="h-6 w-6 mr-2" />
+                  CLICK HERE TO SAVE CHANGES
                 </Button>
               </div>
               
