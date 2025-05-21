@@ -644,14 +644,25 @@ export default function Suppliers() {
       {/* Edit Supplier Dialog */}
       <Dialog open={isEditSupplierOpen} onOpenChange={setIsEditSupplierOpen}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Edit Supplier</DialogTitle>
-            <DialogDescription>
-              Update the details of this supplier
-            </DialogDescription>
+          <DialogHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-2">
+            <div>
+              <DialogTitle>Edit Supplier</DialogTitle>
+              <DialogDescription>
+                Update the details of this supplier
+              </DialogDescription>
+            </div>
+            <Button 
+              type="submit"
+              form="edit-supplier-form" 
+              variant="default"
+              className="mt-3 sm:mt-0 bg-green-600 hover:bg-green-700 text-white font-medium"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onEditSubmit)} className="space-y-4">
+            <form id="edit-supplier-form" onSubmit={form.handleSubmit(onEditSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -839,13 +850,13 @@ export default function Suppliers() {
                   type="submit" 
                   variant="default"
                   disabled={updateSupplierMutation.isPending}
-                  className="gap-2"
+                  className="gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-6 text-lg font-medium"
                 >
                   {updateSupplierMutation.isPending && 
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   }
-                  <Save className="h-4 w-4" />
-                  Save Changes
+                  <Save className="h-5 w-5 mr-1" />
+                  SAVE CHANGES
                 </Button>
               </DialogFooter>
             </form>
