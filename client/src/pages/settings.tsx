@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VoiceTest } from "@/components/ai/voice-test";
 import { 
@@ -97,6 +97,11 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState("general");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch general settings data
+  const { data: generalSettingsData, isLoading: isLoadingGeneralSettings } = useQuery({
+    queryKey: ["/api/settings/general"],
+  });
+
   // General settings form
   const generalForm = useForm<GeneralSettingsValues>({
     resolver: zodResolver(generalSettingsSchema),
@@ -111,6 +116,13 @@ export default function Settings() {
       currency: "USD",
     },
   });
+  
+  // Update form values when settings are loaded
+  useEffect(() => {
+    if (generalSettingsData) {
+      generalForm.reset(generalSettingsData);
+    }
+  }, [generalSettingsData, generalForm]);
 
   // Notifications settings form
   const notificationsForm = useForm<NotificationsSettingsValues>({
@@ -124,18 +136,28 @@ export default function Settings() {
     },
   });
 
-  // Submit handler for general settings
-  const onGeneralSubmit = (data: GeneralSettingsValues) => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+  // General settings mutation
+  const updateGeneralSettingsMutation = useMutation({
+    mutationFn: (settings: GeneralSettingsValues) => 
+      apiRequest("PUT", "/api/settings/general", settings),
+    onSuccess: () => {
       toast({
         title: "Settings updated",
         description: "Your general settings have been successfully updated.",
       });
-      console.log("General settings submitted:", data);
-    }, 1000);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update settings.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Submit handler for general settings
+  const onGeneralSubmit = (data: GeneralSettingsValues) => {
+    updateGeneralSettingsMutation.mutate(data);
   };
 
   // Submit handler for notifications settings

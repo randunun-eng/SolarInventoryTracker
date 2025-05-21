@@ -957,6 +957,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Settings API endpoints
+  app.get("/api/settings/:key", async (req: Request, res: Response) => {
+    try {
+      const { key } = req.params;
+      
+      // Get settings from database using direct SQL query
+      const result = await db.$queryRaw`SELECT value FROM settings WHERE key = ${key}`;
+      
+      // Check if settings exist
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return res.status(404).json({ message: "Settings not found" });
+      }
+      
+      res.json(result[0].value);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+  
+  app.put("/api/settings/:key", async (req: Request, res: Response) => {
+    try {
+      const { key } = req.params;
+      const value = req.body;
+      
+      // Update or insert settings
+      const result = await db.$queryRaw`
+        INSERT INTO settings (key, value, updated_at) 
+        VALUES (${key}, ${JSON.stringify(value)}, CURRENT_TIMESTAMP)
+        ON CONFLICT (key) 
+        DO UPDATE SET value = ${JSON.stringify(value)}, updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `;
+      
+      if (!result || !Array.isArray(result) || result.length === 0) {
+        return res.status(500).json({ error: "Failed to update settings" });
+      }
+      
+      res.json(result[0].value);
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      res.status(500).json({ error: "Failed to update settings" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
