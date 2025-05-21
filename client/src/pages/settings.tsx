@@ -98,9 +98,14 @@ export default function Settings() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch general settings data
-  const { data: generalSettingsData, isLoading: isLoadingGeneralSettings } = useQuery({
+  const { data: generalSettingsData, isLoading: isLoadingGeneralSettings, refetch: refetchGeneralSettings } = useQuery({
     queryKey: ["/api/settings/general"],
   });
+  
+  // Refresh data when component mounts
+  useEffect(() => {
+    refetchGeneralSettings();
+  }, []);
 
   // General settings form
   const generalForm = useForm<GeneralSettingsValues>({
@@ -156,6 +161,9 @@ export default function Settings() {
     onSuccess: () => {
       // Invalidate cache to update UI
       queryClient.invalidateQueries({ queryKey: ["/api/settings/general"] });
+      
+      // Force refetch to ensure we have the latest data
+      refetchGeneralSettings();
       
       // Show a simple success message
       setIsLoading(false);
