@@ -348,8 +348,8 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
   
   // Enhanced patterns for electronic components and technical queries
   
-  // Components
-  const directComponentPattern = /(78\s*m\s*05|lm\s*317|l\s*7912|[\d]+[a-z][\d]+)/i;
+  // Components - enhanced with common voltage regulators
+  const directComponentPattern = /(78\s*m\s*05|78\s*12|l\s*78\s*12|lm\s*317|l\s*7912|[\d]+[a-z][\d]+)/i;
   const directComponentMatch = command.match(directComponentPattern);
   
   // Technical parameter checks
@@ -364,6 +364,18 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
     try {
       // Query the database directly with exact information
       const components = await storage.getComponents();
+      
+      // Handle special case for 7812 voltage regulator
+      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7812')) {
+        console.log("Detected query for 7812 voltage regulator");
+        
+        // The 7812 is a fixed positive voltage regulator with +12V output
+        if (voltageQuery) {
+          return `The 7812 is a fixed positive voltage regulator that provides a stable +12 volt DC output. It's commonly used in power supply circuits where a regulated 12V output is needed.`;
+        } else {
+          return `The 7812 is a positive voltage regulator in the 78xx series. It provides a fixed +12V DC output. These components are typically available in TO-220 packages and are commonly used in power supply circuits.`;
+        }
+      }
       
       // Handle 78M05 specifically
       if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('78m05')) {
