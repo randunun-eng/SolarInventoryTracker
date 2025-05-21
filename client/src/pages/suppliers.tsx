@@ -336,9 +336,6 @@ export default function Suppliers() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Company Name</TableHead>
-                    <TableHead>Contact Person</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
                     <TableHead>Website</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -346,11 +343,16 @@ export default function Suppliers() {
                 <TableBody>
                   {filteredSuppliers.map((supplier) => (
                     <TableRow key={supplier.id}>
-                      <TableCell>
+                      <TableCell className="w-[50%]">
                         <div>
                           <div className="font-medium">{supplier.name}</div>
+                          {supplier.remarks && (
+                            <div className="mt-1 text-muted-foreground text-sm">
+                              {supplier.remarks.length > 80 ? `${supplier.remarks.slice(0, 80)}...` : supplier.remarks}
+                            </div>
+                          )}
                           {supplier.tags && supplier.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
+                            <div className="flex flex-wrap gap-1 mt-2">
                               {supplier.tags.map((tag, i) => (
                                 <div 
                                   key={i} 
@@ -364,9 +366,6 @@ export default function Suppliers() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{supplier.contactName || "—"}</TableCell>
-                      <TableCell>{supplier.email || "—"}</TableCell>
-                      <TableCell>{supplier.phone || "—"}</TableCell>
                       <TableCell>
                         {supplier.website ? (
                           <a 
@@ -386,6 +385,7 @@ export default function Suppliers() {
                             variant="ghost" 
                             size="icon"
                             onClick={() => handleEditSupplier(supplier)}
+                            title="Edit supplier"
                           >
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Edit</span>
@@ -394,6 +394,7 @@ export default function Suppliers() {
                             variant="ghost" 
                             size="icon"
                             onClick={() => handleDeleteSupplier(supplier.id)}
+                            title="Delete supplier"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                             <span className="sr-only">Delete</span>
