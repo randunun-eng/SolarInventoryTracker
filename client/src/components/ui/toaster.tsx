@@ -39,8 +39,8 @@ export function Toaster() {
           <Toast key={id} {...props}>
             <div className="grid gap-1">
               {title && <ToastTitle>{safeContent(title)}</ToastTitle>}
-              {description && typeof description === 'string' && (
-                <ToastDescription>{description}</ToastDescription>
+              {description && (
+                <ToastDescription>{safeContent(description)}</ToastDescription>
               )}
             </div>
             <ToastClose />

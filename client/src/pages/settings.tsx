@@ -156,15 +156,14 @@ export default function Settings() {
     onSuccess: () => {
       // Invalidate cache to update UI
       queryClient.invalidateQueries({ queryKey: ["/api/settings/general"] });
-      toast({
-        description: "Your general settings have been successfully updated.",
-      });
+      
+      // Show a simple success message
+      setIsLoading(false);
+      alert("Your general settings have been successfully updated.");
     },
     onError: () => {
-      toast({
-        description: "Failed to update settings. Please try again.",
-        variant: "destructive",
-      });
+      setIsLoading(false);
+      alert("Failed to update settings. Please try again.");
     },
   });
 
@@ -180,15 +179,14 @@ export default function Settings() {
     onSuccess: () => {
       // Invalidate cache to update UI
       queryClient.invalidateQueries({ queryKey: ["/api/settings/notifications"] });
-      toast({
-        description: "Your notification preferences have been saved.",
-      });
+      
+      // Show a simple success message
+      setIsLoading(false);
+      alert("Your notification preferences have been saved.");
     },
     onError: () => {
-      toast({
-        description: "Failed to update notification settings. Please try again.",
-        variant: "destructive",
-      });
+      setIsLoading(false);
+      alert("Failed to update notification settings. Please try again.");
     },
   });
 
