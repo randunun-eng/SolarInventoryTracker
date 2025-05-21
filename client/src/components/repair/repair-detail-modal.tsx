@@ -119,11 +119,11 @@ export function RepairDetailModal({
                 <h4 className="font-medium text-slate-800 mb-2">Device Information</h4>
                 <div className="mb-3">
                   <p className="text-sm font-medium text-slate-500">Inverter Model</p>
-                  <p className="text-sm text-slate-800">{inverter?.model || "N/A"}</p>
+                  <p className="text-sm text-slate-800">{repair.inverterModel || inverter?.model || "N/A"}</p>
                 </div>
                 <div className="mb-3">
                   <p className="text-sm font-medium text-slate-500">Serial Number</p>
-                  <p className="text-sm text-slate-800">{inverter?.serialNumber || "N/A"}</p>
+                  <p className="text-sm text-slate-800">{repair.inverterSerialNumber || inverter?.serialNumber || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-500">Warranty Status</p>

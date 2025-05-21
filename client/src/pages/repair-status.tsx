@@ -134,7 +134,7 @@ export default function RepairStatusPage() {
           <div className="flex flex-col md:flex-row justify-between gap-6">
             <div>
               <p><strong>Client:</strong> {repair.clientName}</p>
-              <p><strong>Inverter:</strong> {repair.inverterModel} (S/N: {repair.inverterSerial})</p>
+              <p><strong>Inverter:</strong> {repair.inverterModel || "Not specified"} {repair.inverterSerialNumber && `(S/N: ${repair.inverterSerialNumber})`}</p>
               <p><strong>Received Date:</strong> {new Date(repair.receivedDate).toLocaleDateString()}</p>
             </div>
             <div>
