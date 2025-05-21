@@ -367,7 +367,7 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
       // Query the database directly with exact information
       const components = await storage.getComponents();
       
-      // Handle special queries about the entire 78xx series
+      // Handle special queries about the entire 78xx series (positive regulators)
       if ((command.toLowerCase().includes('78 series') || 
            command.toLowerCase().includes('78xx') || 
            command.toLowerCase().includes('78 family')) && 
@@ -386,6 +386,25 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
           • 7824 - Provides +24V fixed output
           
           All these regulators typically come in TO-220 packages and can provide up to 1A of current. They require an input voltage about 2-3V higher than their output voltage to maintain regulation.`;
+      }
+      
+      // Handle special queries about the entire 79xx series (negative regulators)
+      if ((command.toLowerCase().includes('79 series') || 
+           command.toLowerCase().includes('79xx') || 
+           command.toLowerCase().includes('79 family'))) {
+        console.log("Detected query about the entire 79xx series");
+        
+        return `The 79xx series is a family of negative voltage regulators with fixed output voltages. The most common models are:
+          • 7905 - Provides -5V fixed output
+          • 7906 - Provides -6V fixed output
+          • 7908 - Provides -8V fixed output
+          • 7909 - Provides -9V fixed output
+          • 7912 - Provides -12V fixed output
+          • 7915 - Provides -15V fixed output
+          • 7918 - Provides -18V fixed output
+          • 7924 - Provides -24V fixed output
+          
+          These regulators are complements to the 78xx positive regulators and are often used together to create dual-rail power supplies. They have the same current capability (up to 1A) and require about 2-3V of headroom between the input and output voltages, but with negative voltages.`;
       }
       
       // Handle special case for 7805 voltage regulator
@@ -424,6 +443,26 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
           return `The 7812 is a fixed positive voltage regulator that provides a stable +12 volt DC output. It's commonly used in power supply circuits where a regulated 12V output is needed.`;
         } else {
           return `The 7812 is a positive voltage regulator in the 78xx series. It provides a fixed +12V DC output. These components are typically available in TO-220 packages and are commonly used in power supply circuits. The 7812 requires an input voltage of at least 14.5V (about 2.5V higher than its output) for proper regulation.`;
+        }
+      }
+      
+      // Handle special case for 7912 negative voltage regulator
+      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7912')) {
+        console.log("Detected query for 7912 negative voltage regulator");
+        
+        // The 7912 is a fixed negative voltage regulator with -12V output
+        if (voltageQuery) {
+          return `The 7912 is a fixed negative voltage regulator that provides a stable -12 volt DC output. It's part of the 79xx series of negative voltage regulators.`;
+        } else {
+          return `The 7912 is a negative voltage regulator in the 79xx series. Key specifications include:
+          - Output voltage: -12V DC (±4% tolerance)
+          - Maximum output current: 1A
+          - Input voltage range: -35V to -14.5V (requires about 2.5V headroom)
+          - Dropout voltage: 2V (typical)
+          - Thermal and short-circuit protection
+          - Available in TO-220 package
+          
+          It's commonly used in dual supply circuits that require both positive and negative voltage rails, often paired with a 7812 positive regulator.`;
         }
       }
       
