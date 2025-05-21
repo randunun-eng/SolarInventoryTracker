@@ -346,9 +346,16 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
   // that we can answer directly from the database
   console.log(`Processing voice command: "${command}"`);
   
-  // Check for direct component number query like "78M05" or "78 m 05"
-  const directComponentPattern = /(78\s*m\s*05|lm\s*317|l\s*7912)/i;
+  // Enhanced patterns for electronic components and technical queries
+  
+  // Components
+  const directComponentPattern = /(78\s*m\s*05|lm\s*317|l\s*7912|[\d]+[a-z][\d]+)/i;
   const directComponentMatch = command.match(directComponentPattern);
+  
+  // Technical parameter checks
+  const voltageQuery = /voltage|volts|vdc|vac|output|input|power|supply/i.test(command);
+  const pinoutQuery = /pinout|pin\s*out|pin\s*configuration|pin\s*diagram/i.test(command);
+  const packageQuery = /package|case|housing|to-\d+|sot-\d+|smd|through\s*hole/i.test(command);
   
   if (directComponentMatch) {
     const rawComponentName = directComponentMatch[0];
@@ -366,6 +373,19 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
         
         if (m78Component) {
           console.log('Found exact 78M05 component:', m78Component);
+          
+          // Check if this is a voltage query
+          if (command.toLowerCase().includes('voltage') || 
+              command.toLowerCase().includes('volts') || 
+              command.toLowerCase().includes('vdc') ||
+              command.toLowerCase().includes('output')) {
+            
+            // Use the description field which contains the voltage spec
+            // For 78M05, the description is "+5 VDC"
+            return `The ${m78Component.name} is a ${m78Component.description} voltage regulator. It provides a fixed positive 5 volt DC output.`;
+          }
+          
+          // For stock queries
           return `We have ${m78Component.currentStock} ${m78Component.name} components in stock. 
             The minimum stock level is set to ${m78Component.minimumStock}.`;
         }
