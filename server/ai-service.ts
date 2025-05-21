@@ -585,18 +585,88 @@ export const handleChatQuery = async (req: Request, res: Response) => {
 };
 
 // Handle data operations requested by AI
-// Analyze datasheet content using AI
+// Analyze datasheet content using AI with fallback to database
 export const analyzeDatasheet = async (datasheetUrl: string, componentName: string) => {
-  // If no model is available, return a graceful error message
-  if (!model) {
-    console.error('AI model not available for datasheet analysis.');
-    throw new Error('AI service is currently unavailable. Please check your API key configuration.');
-  }
-  
+  console.log(`Analyzing datasheet for ${componentName} at ${datasheetUrl}`);
+
   try {
-    // For PDF analysis, we'd normally extract the text first
-    // For this example, we're simulating by passing the URL and component name
+    // First check if we can find this component in our database
+    const components = await storage.getComponents();
     
+    // Normalize the component name for better matching
+    const normalizedName = componentName.toLowerCase().replace(/\s+/g, '');
+    
+    // Try to find the component in our database
+    const matchingComponents = components.filter(c => {
+      const normalizedCompName = c.name.toLowerCase().replace(/\s+/g, '');
+      return normalizedCompName.includes(normalizedName) || 
+             normalizedName.includes(normalizedCompName);
+    });
+    
+    console.log(`Found ${matchingComponents.length} matching components in database`);
+    
+    // If we found a matching component, use its data
+    if (matchingComponents.length > 0) {
+      const component = matchingComponents[0];
+      
+      // Get the component's category if available
+      let categoryName = "Unknown";
+      if (component.categoryId) {
+        try {
+          const category = await storage.getCategory(component.categoryId);
+          if (category) {
+            categoryName = category.name;
+          }
+        } catch (err) {
+          console.error('Error fetching category:', err);
+        }
+      }
+      
+      // Build a response from the database
+      const dbResponse = {
+        specifications: {
+          name: component.name,
+          partNumber: component.partNumber || "Not specified",
+          category: categoryName,
+          description: component.description || "Not available"
+        },
+        package: component.partNumber || "Unknown",
+        operatingParameters: {
+          notes: component.description || "No detailed operating parameters available"
+        },
+        applications: [categoryName],
+        alternatives: [],
+        commonIssues: [],
+        technicalNotes: `This component information was retrieved from the local database. For more details, please consult the datasheet.`,
+        databaseSource: true
+      };
+      
+      console.log('Using database information for component analysis');
+      return dbResponse;
+    }
+    
+    // If no database match or if we want enhanced information, try the AI model
+    if (!model) {
+      console.error('AI model not available for datasheet analysis. Using fallback response.');
+      return { 
+        technicalNotes: `Unable to analyze the datasheet for ${componentName} as the AI service is currently unavailable. Please check your component inventory directly or try again later.`,
+        error: "AI service unavailable",
+        specifications: {
+          name: componentName,
+          partNumber: "Unknown",
+          description: "Information not available without AI service"
+        },
+        package: "Unknown",
+        operatingParameters: {
+          notes: "Information not available without AI service"
+        },
+        applications: ["Information not available"],
+        alternatives: [],
+        commonIssues: []
+      };
+    }
+    
+    // If AI model is available, use it for analysis
     const prompt = `
 You are a technical component analyst that specializes in electronic components.
 Please analyze the datasheet for the component "${componentName}" at URL: ${datasheetUrl}
@@ -650,19 +720,105 @@ Format your response as valid JSON with the following structure:
     }
   } catch (error) {
     console.error('Error analyzing datasheet:', error);
-    throw error;
+    // Provide a fallback response even when there's an error
+    return { 
+      technicalNotes: `An error occurred while analyzing the datasheet for ${componentName}. Please try again later.`,
+      error: "Error analyzing datasheet",
+      errorDetails: error.message,
+      specifications: {
+        name: componentName
+      }
+    };
   }
 };
 
-// Find alternative components when out of stock
+// Find alternative components when out of stock, with fallback to database
 export const findAlternativeComponents = async (componentName: string, specifications: any) => {
-  // If no model is available, return a graceful error message
-  if (!model) {
-    console.error('AI model not available for component search.');
-    throw new Error('AI service is currently unavailable. Please check your API key configuration.');
-  }
+  console.log(`Searching for alternatives to ${componentName}`);
   
   try {
+    // First look for alternatives in our database
+    const components = await storage.getComponents();
+    
+    // If the request is for a specific component, try to find it first
+    let originalComponent = null;
+    const normalizedName = componentName.toLowerCase().replace(/\s+/g, '');
+    
+    // Try to find the original component
+    for (const comp of components) {
+      const normalizedCompName = comp.name.toLowerCase().replace(/\s+/g, '');
+      if (normalizedCompName === normalizedName || 
+          (normalizedCompName.includes(normalizedName) && normalizedName.length > 3)) {
+        originalComponent = comp;
+        break;
+      }
+    }
+    
+    // If we found the original component, look for others in the same category
+    if (originalComponent && originalComponent.categoryId) {
+      console.log(`Found original component: ${originalComponent.name}, looking for alternatives in category ${originalComponent.categoryId}`);
+      
+      // Get components in the same category
+      const alternatives = components.filter(c => 
+        c.id !== originalComponent.id && 
+        c.categoryId === originalComponent.categoryId
+      );
+      
+      if (alternatives.length > 0) {
+        console.log(`Found ${alternatives.length} alternative components in the same category`);
+        
+        // Get category name
+        let categoryName = "Same category";
+        try {
+          const category = await storage.getCategory(originalComponent.categoryId);
+          if (category) {
+            categoryName = category.name;
+          }
+        } catch (err) {
+          console.error('Error fetching category:', err);
+        }
+        
+        // Format database alternatives
+        const dbAlternatives = alternatives.slice(0, 3).map(alt => ({
+          name: alt.name,
+          manufacturer: "Unknown",
+          partNumber: alt.partNumber || "Not specified",
+          keyDifferences: [
+            `Different part number: ${alt.partNumber || 'Not specified'}`,
+            `Current stock: ${alt.currentStock} units`
+          ],
+          adjustmentsNeeded: "Please consult the datasheet for compatibility details.",
+          availabilityNotes: `${alt.currentStock} units available in inventory`
+        }));
+        
+        return {
+          alternatives: dbAlternatives,
+          generalAdvice: `These alternatives are from the same category (${categoryName}) as the requested component. Please verify technical specifications before use.`,
+          databaseSource: true
+        };
+      }
+    }
+    
+    // If no model is available or if AI hits quota limit, provide basic alternative suggestions
+    if (!model) {
+      console.error('AI model not available for component search. Using fallback response.');
+      return { 
+        generalAdvice: `Unable to provide detailed alternatives for ${componentName} as the AI service is currently unavailable. 
+          Please check other components in your inventory from the same category or consult a component reference catalog.`,
+        alternatives: [
+          {
+            name: "Similar components in database",
+            manufacturer: "Various",
+            keyDifferences: ["Unknown without AI analysis"],
+            adjustmentsNeeded: "Verify specifications carefully before substitution",
+            availabilityNotes: "Check your inventory system"
+          }
+        ],
+        error: "AI service unavailable"
+      };
+    }
+    
+    // If AI model is available, use it for finding alternatives
     const prompt = `
 You are a technical component advisor for an electronic repair shop.
 The shop is looking for alternatives to the component "${componentName}" with these specifications:
@@ -716,7 +872,13 @@ Format your response as valid JSON with the following structure:
     }
   } catch (error) {
     console.error('Error finding alternative components:', error);
-    throw error;
+    
+    // Provide fallback response on error
+    return { 
+      generalAdvice: `An error occurred while searching for alternatives to ${componentName}. Please try a different component or check your inventory directly.`,
+      error: "Error finding alternatives",
+      errorDetails: error.message
+    };
   }
 };
 
