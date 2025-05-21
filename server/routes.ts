@@ -10,17 +10,35 @@ import express from "express";
 
 // Configure multer storage for file uploads
 const uploadsDir = path.join(process.cwd(), 'uploads');
-// Create directory if it doesn't exist
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+const imagesDir = path.join(uploadsDir, 'images');
+const datasheetsDir = path.join(uploadsDir, 'datasheets');
 
+// Ensure directories exist
+[uploadsDir, imagesDir, datasheetsDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Configure storage based on file type
 const storage_multer = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, uploadsDir);
+    let destination = uploadsDir;
+    
+    // Route files to appropriate directories based on fieldname
+    if (file.fieldname === 'image') {
+      destination = imagesDir;
+    } else if (file.fieldname === 'datasheet') {
+      destination = datasheetsDir;
+    }
+    
+    cb(null, destination);
   },
   filename: function(req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
+    // Create unique filename with original extension
+    const fileExt = path.extname(file.originalname);
+    const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExt}`;
+    cb(null, fileName);
   }
 });
 
@@ -49,6 +67,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   
   // File upload endpoints
+  app.post("/api/upload/file", upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+      
+      // Return the file path that can be used to access the file
+      const fileUrl = `/uploads/${req.file.filename}`;
+      res.json({ 
+        url: fileUrl,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  });
+  
+  // Handle image uploads specifically
+  app.post("/api/upload/image", upload.single('image'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No image file provided" });
+      }
+      
+      // Return the file path that can be used to access the image
+      const fileUrl = `/uploads/images/${path.basename(req.file.path)}`;
+      res.json({ 
+        url: fileUrl,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ error: "Failed to upload image" });
+    }
+  });
+  
+  // Handle datasheet uploads specifically
+  app.post("/api/upload/datasheet", upload.single('datasheet'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No datasheet file provided" });
+      }
+      
+      // Return the file path that can be used to access the datasheet
+      const fileUrl = `/uploads/datasheets/${path.basename(req.file.path)}`;
+      res.json({ 
+        url: fileUrl,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Error uploading datasheet:", error);
+      res.status(500).json({ error: "Failed to upload datasheet" });
+    }
+  });
   app.post("/api/upload/image", upload.single('image'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {

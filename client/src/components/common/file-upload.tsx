@@ -71,14 +71,20 @@ export default function FileUpload({
       for (let i = 0; i < totalFiles; i++) {
         // Create form data
         const formData = new FormData();
-        formData.append(fieldName, selectedFiles[i]);
+        // Use the field name specified in props (image, datasheet, or file)
+        const actualFieldName = fieldName || 'file';
+        formData.append(actualFieldName, selectedFiles[i]);
         
         // Update progress
         setProgress(Math.round(((i + 0.5) / totalFiles) * 100));
         
         try {
+          // Use the appropriate endpoint based on the fieldName
+          const endpoint = `/api/upload/${actualFieldName}`;
+          console.log(`Uploading to ${endpoint} with field name: ${actualFieldName}`);
+          
           // Direct fetch to server upload endpoint
-          const response = await fetch(`/api/upload/${fieldName}`, {
+          const response = await fetch(endpoint, {
             method: 'POST',
             body: formData,
           });
@@ -91,7 +97,13 @@ export default function FileUpload({
           newUrls.push(result.url);
         } catch (uploadError) {
           console.error('Upload error:', uploadError);
-          // Fallback to temporary blob URL if server upload fails
+          toast({
+            title: "Upload error",
+            description: "Failed to upload file to server. Please try again.",
+            variant: "destructive",
+          });
+          
+          // Create a temporary blob URL as fallback
           const blobUrl = URL.createObjectURL(selectedFiles[i]);
           newUrls.push(blobUrl);
         }
