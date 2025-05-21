@@ -299,13 +299,12 @@ export default function UsersPage() {
               Manage system users and their access roles
             </CardDescription>
           </div>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add User
+          </Button>
+            
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
@@ -360,22 +359,21 @@ export default function UsersPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="mr-2"
+                          onClick={() => setEditingUser(user)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        
                         <Dialog
                           open={editingUser?.id === user.id}
                           onOpenChange={(open) => {
                             if (!open) setEditingUser(null);
                           }}
                         >
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="mr-2"
-                              onClick={() => setEditingUser(user)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
                           <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader>
                               <DialogTitle>Edit User</DialogTitle>
@@ -398,16 +396,20 @@ export default function UsersPage() {
                           </DialogContent>
                         </Dialog>
 
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => setDeletingUserId(user.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => setDeletingUserId(user.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                          
+                        <AlertDialog 
+                          open={deletingUserId === user.id}
+                          onOpenChange={(open) => {
+                            if (!open) setDeletingUserId(null);
+                          }}
+                        >
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>
