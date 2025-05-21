@@ -838,25 +838,35 @@ export default function Suppliers() {
                 )}
               />
               
-              <DialogFooter className="mt-6">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-6 mb-3">
+                <div className="font-medium text-blue-800 mb-2 flex items-center">
+                  <Info className="h-5 w-5 mr-2" />
+                  Ready to save your changes?
+                </div>
+                <p className="text-blue-700 text-sm mb-3">
+                  Click the button below to update this supplier with your changes, including any new tags you've added.
+                </p>
+                <Button 
+                  type="submit" 
+                  variant="default"
+                  disabled={updateSupplierMutation.isPending}
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white py-6 text-lg font-medium"
+                >
+                  {updateSupplierMutation.isPending && 
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  }
+                  <Save className="h-5 w-5 mr-1" />
+                  SAVE ALL CHANGES
+                </Button>
+              </div>
+              
+              <DialogFooter>
                 <Button 
                   type="button"
                   variant="outline" 
                   onClick={() => setIsEditSupplierOpen(false)}
                 >
                   Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  variant="default"
-                  disabled={updateSupplierMutation.isPending}
-                  className="gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-6 text-lg font-medium"
-                >
-                  {updateSupplierMutation.isPending && 
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  }
-                  <Save className="h-5 w-5 mr-1" />
-                  SAVE CHANGES
                 </Button>
               </DialogFooter>
             </form>
