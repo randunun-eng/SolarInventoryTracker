@@ -74,34 +74,24 @@ export function ComponentDetailModal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {/* Component Image and Datasheet */}
               <div className="md:col-span-1">
-                <div className="bg-slate-100 rounded-lg p-2 flex items-center justify-center h-64 overflow-hidden relative">
+                <div className="bg-slate-100 rounded-lg p-4 flex flex-col items-center justify-center h-64 overflow-hidden relative">
                   {component.image ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      {component.image.startsWith('blob:') ? (
-                        <div className="flex flex-col items-center text-amber-500">
-                          <Info size={48} />
-                          <span className="mt-2 text-sm text-center">Image preview unavailable<br/>Please save component first</span>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex flex-col items-center">
-                            <img 
-                              src={component.image} 
-                              alt={component.name} 
-                              className="max-h-[200px] max-w-[200px] object-contain mx-auto rounded-md shadow-md border border-slate-200"
-                              onClick={() => window.open(component.image, '_blank')}
-                              style={{ cursor: 'zoom-in' }}
-                            />
-                            <p className="mt-2 text-xs text-center font-medium text-slate-700">
-                              {component.name}
-                            </p>
-                          </div>
-                          <div className="absolute bottom-0 right-0 bg-white bg-opacity-70 p-1 rounded-tl text-xs">
-                            Click to enlarge
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <>
+                      <div className="w-56 h-40 bg-white rounded-md shadow-md border border-slate-200 p-2 flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={component.image} 
+                          alt={component.name || "Component"} 
+                          className="max-h-full max-w-full object-contain"
+                          style={{ maxHeight: "100%" }}
+                        />
+                      </div>
+                      <p className="mt-3 text-sm text-center font-medium text-slate-700">
+                        {component.name || "Component"}
+                      </p>
+                      <p className="text-xs text-center text-slate-500">
+                        {component.partNumber || ""}
+                      </p>
+                    </>
                   ) : (
                     <div className="flex flex-col items-center text-slate-400">
                       <Info size={48} />
