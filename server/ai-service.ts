@@ -351,7 +351,7 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
   // Enhanced patterns for electronic components and technical queries
   
   // Components - enhanced with common voltage regulators (both positive and negative)
-  const directComponentPattern = /(78\s*m\s*05|78\s*12|l\s*78\s*12|lm\s*317|l\s*79\s*05|l\s*7905|l\s*7912|[\d]+[a-z][\d]+)/i;
+  const directComponentPattern = /(78\s*m\s*05|78\s*0\s*5|78\s*12|l\s*78\s*12|7805|7806|7808|7809|7812|7815|7818|7824|lm\s*317|l\s*79\s*05|l\s*7905|l\s*7912|[\d]+[a-z][\d]+)/i;
   const directComponentMatch = command.match(directComponentPattern);
   
   // Technical parameter checks
@@ -367,6 +367,54 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
       // Query the database directly with exact information
       const components = await storage.getComponents();
       
+      // Handle special queries about the entire 78xx series
+      if ((command.toLowerCase().includes('78 series') || 
+           command.toLowerCase().includes('78xx') || 
+           command.toLowerCase().includes('78 family')) && 
+          !rawComponentName.toLowerCase().includes('7812') && 
+          !rawComponentName.toLowerCase().includes('7805')) {
+        console.log("Detected query about the entire 78xx series");
+        
+        return `The 78xx series is a family of positive voltage regulators with fixed output voltages. The most common models are:
+          • 7805 - Provides +5V fixed output, commonly used in digital circuits
+          • 7806 - Provides +6V fixed output
+          • 7808 - Provides +8V fixed output
+          • 7809 - Provides +9V fixed output
+          • 7812 - Provides +12V fixed output, often used for motors and relays
+          • 7815 - Provides +15V fixed output
+          • 7818 - Provides +18V fixed output
+          • 7824 - Provides +24V fixed output
+          
+          All these regulators typically come in TO-220 packages and can provide up to 1A of current. They require an input voltage about 2-3V higher than their output voltage to maintain regulation.`;
+      }
+      
+      // Handle special case for 7805 voltage regulator
+      if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7805')) {
+        console.log("Detected query for 7805 voltage regulator");
+        
+        // The 7805 is a fixed positive voltage regulator with +5V output
+        if (voltageQuery) {
+          return `The 7805 is a fixed positive voltage regulator that provides a stable +5 volt DC output. It can handle input voltages from 7V to 35V while maintaining a regulated 5V output, making it ideal for digital circuits and microcontrollers.`;
+        } else if (pinoutQuery) {
+          return `The 7805 in a TO-220 package has 3 pins: 
+          1. Input (connected to unregulated DC)
+          2. Ground (common)
+          3. Output (regulated +5V DC)
+          
+          It requires proper heatsinking for currents above 100mA and typically can supply up to 1A of current.`;
+        } else {
+          return `The 7805 is a positive voltage regulator in the 78xx series that provides a fixed +5V DC output. It's available in TO-220, TO-252, and SOT-223 packages. Key specifications include:
+          - Output voltage: +5V DC (±4% tolerance)
+          - Maximum output current: 1A
+          - Input voltage range: 7V to 35V
+          - Dropout voltage: 2V (typical)
+          - Thermal protection and short-circuit protection
+          - Operating temperature range: 0°C to 125°C
+          
+          It's commonly used in digital circuits, microcontroller systems, and as a post-regulator after transformers and rectifiers.`;
+        }
+      }
+      
       // Handle special case for 7812 voltage regulator
       if (rawComponentName.toLowerCase().replace(/\s+/g, '').includes('7812')) {
         console.log("Detected query for 7812 voltage regulator");
@@ -375,7 +423,7 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
         if (voltageQuery) {
           return `The 7812 is a fixed positive voltage regulator that provides a stable +12 volt DC output. It's commonly used in power supply circuits where a regulated 12V output is needed.`;
         } else {
-          return `The 7812 is a positive voltage regulator in the 78xx series. It provides a fixed +12V DC output. These components are typically available in TO-220 packages and are commonly used in power supply circuits.`;
+          return `The 7812 is a positive voltage regulator in the 78xx series. It provides a fixed +12V DC output. These components are typically available in TO-220 packages and are commonly used in power supply circuits. The 7812 requires an input voltage of at least 14.5V (about 2.5V higher than its output) for proper regulation.`;
         }
       }
       
