@@ -958,6 +958,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get unique inverter models for autocomplete
+  app.get("/api/inverter-models", async (req: Request, res: Response) => {
+    try {
+      const models = await storage.getUniqueInverterModels();
+      res.json(models);
+    } catch (error) {
+      console.error("Error fetching inverter models:", error);
+      res.status(500).json({ error: "Failed to fetch inverter models" });
+    }
+  });
+
   // Settings API endpoints
   app.get("/api/settings/:key", async (req: Request, res: Response) => {
     try {

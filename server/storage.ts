@@ -81,6 +81,7 @@ export interface IStorage {
   createUsedComponent(usedComponent: InsertUsedComponent): Promise<UsedComponent>;
   getMostUsedComponents(limit: number): Promise<{componentId: number, componentName: string, totalUsed: number}[]>;
   getCommonFaultTypes(limit: number): Promise<{faultTypeId: number, faultTypeName: string, percentage: number}[]>;
+  getUniqueInverterModels(): Promise<string[]>;
 }
 
 // implement the interface with a memory storage
@@ -507,6 +508,19 @@ export class MemStorage implements IStorage {
       .slice(0, limit);
     
     return result;
+  }
+
+  async getUniqueInverterModels(): Promise<string[]> {
+    // Get unique inverter models from memory repairs
+    const models = new Set<string>();
+    
+    this.repairs.forEach(repair => {
+      if (repair.inverterModel && repair.inverterModel.trim() !== '') {
+        models.add(repair.inverterModel.trim());
+      }
+    });
+    
+    return Array.from(models).sort();
   }
 }
 
@@ -1054,6 +1068,19 @@ class DatabaseStorageClass implements IStorage {
     );
     
     return result.filter(item => item !== null) as {faultTypeId: number, faultTypeName: string, percentage: number}[];
+  }
+
+  async getUniqueInverterModels(): Promise<string[]> {
+    const result = await db.execute(`
+      SELECT DISTINCT inverter_model 
+      FROM repairs 
+      WHERE inverter_model IS NOT NULL 
+        AND inverter_model != '' 
+        AND TRIM(inverter_model) != ''
+      ORDER BY inverter_model ASC
+    `);
+    
+    return result.rows?.map(row => row.inverter_model).filter(Boolean) || [];
   }
 }
 

@@ -90,6 +90,11 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
     queryKey: ["/api/fault-types"],
   });
 
+  // Fetch unique inverter models for autocomplete
+  const { data: inverterModels = [], isLoading: isLoadingInverterModels } = useQuery({
+    queryKey: ["/api/inverter-models"],
+  });
+
   // State for selected client to filter inverters
   const [selectedClientId, setSelectedClientId] = useState<number | undefined>(
     repair?.clientId
@@ -331,9 +336,38 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Inverter Model*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter inverter model" {...field} />
-                    </FormControl>
+                    <Select 
+                      onValueChange={(value) => {
+                        if (value === 'custom') {
+                          field.onChange('');
+                        } else {
+                          field.onChange(value);
+                        }
+                      }}
+                      value={field.value || ''}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select or enter inverter model" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {inverterModels.map((model) => (
+                          <SelectItem key={model} value={model}>
+                            {model}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="custom">+ Enter new model</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {(field.value === '' || !inverterModels.includes(field.value)) && (
+                      <Input 
+                        placeholder="Enter new inverter model" 
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="mt-2"
+                      />
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
