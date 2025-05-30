@@ -75,6 +75,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoUploadMethod, setPhotoUploadMethod] = useState<'camera' | 'file' | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Fetch repair data if editing
   const { data: repair, isLoading: isLoadingRepair } = useQuery({
@@ -395,38 +396,46 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Inverter Model*</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        if (value === 'custom') {
-                          field.onChange('');
-                        } else {
-                          field.onChange(value);
-                        }
-                      }}
-                      value={field.value || ''}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select or enter inverter model" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {inverterModels.map((model) => (
-                          <SelectItem key={model} value={model}>
-                            {model}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="custom">+ Enter new model</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {(field.value === '' || !inverterModels.includes(field.value)) && (
-                      <Input 
-                        placeholder="Enter new inverter model" 
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        className="mt-2"
-                      />
-                    )}
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          placeholder="Enter inverter model (with autocomplete)" 
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                            setShowSuggestions(true);
+                          }}
+                          onFocus={() => setShowSuggestions(true)}
+                          onBlur={() => {
+                            // Delay hiding suggestions to allow click
+                            setTimeout(() => setShowSuggestions(false), 200);
+                          }}
+                          className="w-full"
+                        />
+                        {showSuggestions && field.value && Array.isArray(inverterModels) && inverterModels.filter(model => 
+                          model.toLowerCase().includes(field.value.toLowerCase())
+                        ).length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {inverterModels
+                              .filter(model => model.toLowerCase().includes(field.value.toLowerCase()))
+                              .slice(0, 5)
+                              .map((model) => (
+                                <div
+                                  key={model}
+                                  className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm"
+                                  onClick={() => {
+                                    field.onChange(model);
+                                    setShowSuggestions(false);
+                                  }}
+                                >
+                                  {model}
+                                </div>
+                              ))
+                            }
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
