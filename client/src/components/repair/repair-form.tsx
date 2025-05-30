@@ -161,13 +161,70 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
   }, [watchClientId]);
   
   // Set up camera access
-  const openCamera = () => {
+  const openCamera = async () => {
     setPhotoUploadMethod('camera');
-    // In a real implementation, this would use the device camera API
-    toast({
-      title: "Camera Access",
-      description: "Camera access would be requested here.",
-    });
+    setIsUploading(true);
+    
+    try {
+      // Request camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Use back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      // Create video element to capture photo
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.playsInline = true; // Important for iOS
+      
+      // Wait for video to be ready
+      video.onloadedmetadata = () => {
+        // Create canvas to capture frame
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        // Set canvas size to video size
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Capture frame after a short delay
+        setTimeout(() => {
+          if (context) {
+            context.drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Add photo to the list
+            setPhotos(prev => [...prev, dataUrl]);
+            
+            // Update form value
+            const currentPhotos = form.getValues("repairPhotos") || [];
+            form.setValue("repairPhotos", [...currentPhotos, dataUrl]);
+            
+            toast({
+              title: "Photo captured",
+              description: "Photo has been added to your repair record.",
+            });
+          }
+          
+          // Stop camera stream
+          stream.getTracks().forEach(track => track.stop());
+          setIsUploading(false);
+        }, 1000); // Give user 1 second to see the preview
+      };
+      
+    } catch (error) {
+      console.error('Camera access error:', error);
+      toast({
+        title: "Camera Access Error",
+        description: "Unable to access camera. Please check permissions or use file upload instead.",
+        variant: "destructive"
+      });
+      setIsUploading(false);
+    }
   };
   
   // Handle file upload
