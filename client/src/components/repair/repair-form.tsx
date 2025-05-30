@@ -441,94 +441,52 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                     <FormControl>
                       <div className="flex gap-2">
                         <Input placeholder="Enter serial number or scan barcode" {...field} className="flex-1" />
-                        <label className="cursor-pointer">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            disabled={isScanning}
-                            asChild
-                          >
-                            <span>
-                              {isScanning ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <QrCode className="h-4 w-4" />
-                              )}
-                            </span>
-                          </Button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          disabled={isScanning}
+                          onClick={async () => {
+                            setIsScanning(true);
+                            
+                            try {
+                              // Try to read from clipboard (works if user copied from scanner app)
+                              const clipboardText = await navigator.clipboard.readText();
                               
-                              setIsScanning(true);
-                              
-                              try {
-                                // Create image element to load the captured photo
-                                const img = new Image();
-                                const canvas = document.createElement('canvas');
-                                const ctx = canvas.getContext('2d');
-                                
-                                img.onload = async () => {
-                                  // Set canvas size to image size
-                                  canvas.width = img.width;
-                                  canvas.height = img.height;
-                                  
-                                  // Draw image to canvas
-                                  ctx?.drawImage(img, 0, 0);
-                                  
-                                  try {
-                                    // Use ZXing library to decode barcode from image
-                                    const codeReader = new BrowserMultiFormatReader();
-                                    const result = await codeReader.decodeFromImageElement(img);
-                                    
-                                    const scannedValue = result.getText();
-                                    field.onChange(scannedValue);
-                                    
-                                    toast({
-                                      title: "Barcode scanned successfully!",
-                                      description: `Serial number: ${scannedValue}`,
-                                    });
-                                    
-                                  } catch (decodeError) {
-                                    console.error('Barcode decode error:', decodeError);
-                                    toast({
-                                      title: "No barcode found",
-                                      description: "Could not find a barcode in the image. Please try taking a clearer photo of the barcode.",
-                                      variant: "destructive"
-                                    });
-                                  }
-                                  
-                                  setIsScanning(false);
-                                };
-                                
-                                // Load the captured image
-                                const reader = new FileReader();
-                                reader.onload = (e) => {
-                                  img.src = e.target?.result as string;
-                                };
-                                reader.readAsDataURL(file);
-                                
-                              } catch (error) {
-                                console.error('Image processing error:', error);
+                              // Check if clipboard contains a likely serial number (numbers/letters, reasonable length)
+                              if (clipboardText && clipboardText.trim().length >= 5 && /^[A-Za-z0-9\-_]+$/.test(clipboardText.trim())) {
+                                field.onChange(clipboardText.trim());
                                 toast({
-                                  title: "Image processing failed",
-                                  description: "Could not process the captured image. Please try again.",
-                                  variant: "destructive"
+                                  title: "Serial number pasted!",
+                                  description: `From clipboard: ${clipboardText.trim()}`,
                                 });
                                 setIsScanning(false);
+                                return;
                               }
                               
-                              // Reset the input
-                              e.target.value = '';
-                            }}
-                          />
-                        </label>
+                              // If no valid clipboard content, show instructions
+                              toast({
+                                title: "Use your barcode scanner app",
+                                description: "1. Open your Google Scan app\n2. Scan the barcode\n3. Tap 'Copy'\n4. Click this button again to paste",
+                              });
+                              
+                            } catch (error) {
+                              // Clipboard access might be restricted, show instructions
+                              toast({
+                                title: "Use your barcode scanner app",
+                                description: "1. Open your Google Scan app\n2. Scan the barcode\n3. Tap 'Copy'\n4. Manually paste in the field above",
+                              });
+                            }
+                            
+                            setIsScanning(false);
+                          }}
+                        >
+                          {isScanning ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <QrCode className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                     </FormControl>
                     <FormMessage />
