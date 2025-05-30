@@ -611,16 +611,28 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                                 Drag & drop photos here, or click to upload
                               </p>
                               <div className="flex flex-wrap justify-center gap-2">
-                                <Button 
-                                  type="button" 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={openCamera}
-                                  disabled={isUploading}
-                                >
-                                  <Camera className="h-4 w-4 mr-2" />
-                                  Use Camera
-                                </Button>
+                                <label className="cursor-pointer">
+                                  <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="sm"
+                                    disabled={isUploading}
+                                    asChild
+                                  >
+                                    <span>
+                                      <Camera className="h-4 w-4 mr-2" />
+                                      Take Photo
+                                    </span>
+                                  </Button>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="hidden"
+                                    onChange={handleFileUpload}
+                                    disabled={isUploading}
+                                  />
+                                </label>
                                 
                                 <label className="cursor-pointer">
                                   <Button 
@@ -628,10 +640,12 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                                     variant="outline" 
                                     size="sm"
                                     disabled={isUploading}
-                                    onClick={() => document.getElementById('photo-upload')?.click()}
+                                    asChild
                                   >
-                                    <Upload className="h-4 w-4 mr-2" />
-                                    Upload File
+                                    <span>
+                                      <Upload className="h-4 w-4 mr-2" />
+                                      Upload File
+                                    </span>
                                   </Button>
                                   <input
                                     id="photo-upload"
