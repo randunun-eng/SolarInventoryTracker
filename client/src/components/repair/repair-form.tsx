@@ -24,7 +24,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Loader2, Camera, Upload, Cloud } from "lucide-react";
+import { Loader2, Camera, Upload, Cloud, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import FileUpload from "@/components/common/file-upload";
 import { Card, CardContent } from "@/components/ui/card";
@@ -437,7 +437,78 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                   <FormItem>
                     <FormLabel>Serial Number*</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter serial number" {...field} />
+                      <div className="flex gap-2">
+                        <Input placeholder="Enter serial number or scan barcode" {...field} className="flex-1" />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              // Try to use the device's barcode scanner capability
+                              if ('BarcodeDetector' in window) {
+                                const barcodeDetector = new window.BarcodeDetector();
+                                const stream = await navigator.mediaDevices.getUserMedia({ 
+                                  video: { facingMode: 'environment' } 
+                                });
+                                
+                                const video = document.createElement('video');
+                                video.srcObject = stream;
+                                video.play();
+                                
+                                video.onloadedmetadata = async () => {
+                                  try {
+                                    const barcodes = await barcodeDetector.detect(video);
+                                    if (barcodes.length > 0) {
+                                      const scannedValue = barcodes[0].rawValue;
+                                      field.onChange(scannedValue);
+                                      toast({
+                                        title: "Barcode scanned",
+                                        description: "Serial number has been filled automatically.",
+                                      });
+                                    }
+                                  } catch (error) {
+                                    toast({
+                                      title: "Scanning failed",
+                                      description: "Please enter the serial number manually or use your phone's barcode scanner app.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                  stream.getTracks().forEach(track => track.stop());
+                                };
+                              } else {
+                                // Fallback: Show instructions for using phone's barcode scanner
+                                toast({
+                                  title: "Use your barcode scanner app",
+                                  description: "Open your phone's barcode scanner app, scan the code, then paste the result here.",
+                                });
+                                
+                                // Try to read from clipboard if user has scanned with another app
+                                try {
+                                  const clipboardText = await navigator.clipboard.readText();
+                                  if (clipboardText && clipboardText.length > 5) {
+                                    field.onChange(clipboardText);
+                                    toast({
+                                      title: "Pasted from clipboard",
+                                      description: "Serial number filled from your clipboard.",
+                                    });
+                                  }
+                                } catch (clipboardError) {
+                                  // Clipboard access failed, that's okay
+                                }
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Scanner not available",
+                                description: "Please use your phone's barcode scanner app and paste the result.",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                        >
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
