@@ -441,151 +441,94 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                     <FormControl>
                       <div className="flex gap-2">
                         <Input placeholder="Enter serial number or scan barcode" {...field} className="flex-1" />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          disabled={isScanning}
-                          onClick={async () => {
-                            setIsScanning(true);
-                            
-                            try {
-                              // First, request camera permission explicitly
-                              await navigator.mediaDevices.getUserMedia({ 
-                                video: { facingMode: 'environment' }
-                              });
+                        <label className="cursor-pointer">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            disabled={isScanning}
+                            asChild
+                          >
+                            <span>
+                              {isScanning ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <QrCode className="h-4 w-4" />
+                              )}
+                            </span>
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
                               
-                              const codeReader = new BrowserMultiFormatReader();
+                              setIsScanning(true);
                               
-                              // Get camera devices
-                              const videoInputDevices = await codeReader.listVideoInputDevices();
-                              
-                              if (videoInputDevices.length === 0) {
-                                throw new Error('No camera found');
-                              }
-                              
-                              // Use back camera if available, otherwise use first available
-                              const selectedDeviceId = videoInputDevices.find(device => 
-                                device.label.toLowerCase().includes('back') || 
-                                device.label.toLowerCase().includes('rear') ||
-                                device.label.toLowerCase().includes('environment')
-                              )?.deviceId || videoInputDevices[0].deviceId;
-                              
-                              // Create scanner overlay
-                              const overlay = document.createElement('div');
-                              overlay.style.cssText = `
-                                position: fixed;
-                                top: 0;
-                                left: 0;
-                                width: 100vw;
-                                height: 100vh;
-                                background: black;
-                                z-index: 9999;
-                                display: flex;
-                                flex-direction: column;
-                                align-items: center;
-                                justify-content: center;
-                              `;
-                              
-                              // Create a video element for preview
-                              const videoElement = document.createElement('video');
-                              videoElement.style.cssText = `
-                                width: 100%;
-                                height: 100%;
-                                object-fit: cover;
-                              `;
-                              
-                              // Add instruction text
-                              const instructionText = document.createElement('div');
-                              instructionText.textContent = 'Point camera at barcode to scan';
-                              instructionText.style.cssText = `
-                                position: absolute;
-                                bottom: 100px;
-                                color: white;
-                                font-size: 18px;
-                                text-align: center;
-                                background: rgba(0,0,0,0.7);
-                                padding: 10px 20px;
-                                border-radius: 5px;
-                              `;
-                              
-                              // Add close button overlay
-                              const closeButton = document.createElement('button');
-                              closeButton.textContent = '✕ Close';
-                              closeButton.style.cssText = `
-                                position: absolute;
-                                top: 20px;
-                                right: 20px;
-                                background: rgba(255,255,255,0.9);
-                                color: black;
-                                border: none;
-                                padding: 12px 20px;
-                                border-radius: 25px;
-                                font-size: 16px;
-                                font-weight: bold;
-                                cursor: pointer;
-                                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                              `;
-                              
-                              overlay.appendChild(videoElement);
-                              overlay.appendChild(instructionText);
-                              overlay.appendChild(closeButton);
-                              document.body.appendChild(overlay);
-                              
-                              const stopScanning = () => {
-                                codeReader.reset();
-                                document.body.removeChild(overlay);
-                                setIsScanning(false);
-                              };
-                              
-                              closeButton.onclick = stopScanning;
-                              
-                              // Start scanning
-                              codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, (result, error) => {
-                                if (result) {
-                                  const scannedValue = result.getText();
-                                  field.onChange(scannedValue);
-                                  
-                                  toast({
-                                    title: "Barcode scanned!",
-                                    description: `Serial number: ${scannedValue}`,
-                                  });
-                                  
-                                  stopScanning();
-                                }
+                              try {
+                                // Create image element to load the captured photo
+                                const img = new Image();
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
                                 
-                                if (error && !(error.name === 'NotFoundException')) {
-                                  console.log('Scanning error:', error);
-                                }
-                              });
-                              
-                            } catch (error) {
-                              console.error('Scanner error:', error);
-                              let errorMessage = "Please allow camera access when prompted.";
-                              
-                              if (error.name === 'NotAllowedError') {
-                                errorMessage = "Camera permission denied. Please allow camera access in your browser settings and try again.";
-                              } else if (error.name === 'NotFoundError') {
-                                errorMessage = "No camera found on this device.";
-                              } else if (error.name === 'NotSupportedError') {
-                                errorMessage = "Camera not supported on this device.";
+                                img.onload = async () => {
+                                  // Set canvas size to image size
+                                  canvas.width = img.width;
+                                  canvas.height = img.height;
+                                  
+                                  // Draw image to canvas
+                                  ctx?.drawImage(img, 0, 0);
+                                  
+                                  try {
+                                    // Use ZXing library to decode barcode from image
+                                    const codeReader = new BrowserMultiFormatReader();
+                                    const result = await codeReader.decodeFromImageElement(img);
+                                    
+                                    const scannedValue = result.getText();
+                                    field.onChange(scannedValue);
+                                    
+                                    toast({
+                                      title: "Barcode scanned successfully!",
+                                      description: `Serial number: ${scannedValue}`,
+                                    });
+                                    
+                                  } catch (decodeError) {
+                                    console.error('Barcode decode error:', decodeError);
+                                    toast({
+                                      title: "No barcode found",
+                                      description: "Could not find a barcode in the image. Please try taking a clearer photo of the barcode.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                  
+                                  setIsScanning(false);
+                                };
+                                
+                                // Load the captured image
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                  img.src = e.target?.result as string;
+                                };
+                                reader.readAsDataURL(file);
+                                
+                              } catch (error) {
+                                console.error('Image processing error:', error);
+                                toast({
+                                  title: "Image processing failed",
+                                  description: "Could not process the captured image. Please try again.",
+                                  variant: "destructive"
+                                });
+                                setIsScanning(false);
                               }
                               
-                              toast({
-                                title: "Cannot access camera",
-                                description: errorMessage,
-                                variant: "destructive"
-                              });
-                              setIsScanning(false);
-                            }
-                          }}
-                        >
-                          {isScanning ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <QrCode className="h-4 w-4" />
-                          )}
-                        </Button>
+                              // Reset the input
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
                       </div>
                     </FormControl>
                     <FormMessage />
