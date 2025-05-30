@@ -450,6 +450,11 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                             setIsScanning(true);
                             
                             try {
+                              // First, request camera permission explicitly
+                              await navigator.mediaDevices.getUserMedia({ 
+                                video: { facingMode: 'environment' }
+                              });
+                              
                               const codeReader = new BrowserMultiFormatReader();
                               
                               // Get camera devices
@@ -466,43 +471,70 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                                 device.label.toLowerCase().includes('environment')
                               )?.deviceId || videoInputDevices[0].deviceId;
                               
-                              // Create a video element for preview
-                              const videoElement = document.createElement('video');
-                              videoElement.style.cssText = `
+                              // Create scanner overlay
+                              const overlay = document.createElement('div');
+                              overlay.style.cssText = `
                                 position: fixed;
                                 top: 0;
                                 left: 0;
                                 width: 100vw;
                                 height: 100vh;
-                                object-fit: cover;
-                                z-index: 9999;
                                 background: black;
+                                z-index: 9999;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                              `;
+                              
+                              // Create a video element for preview
+                              const videoElement = document.createElement('video');
+                              videoElement.style.cssText = `
+                                width: 100%;
+                                height: 100%;
+                                object-fit: cover;
+                              `;
+                              
+                              // Add instruction text
+                              const instructionText = document.createElement('div');
+                              instructionText.textContent = 'Point camera at barcode to scan';
+                              instructionText.style.cssText = `
+                                position: absolute;
+                                bottom: 100px;
+                                color: white;
+                                font-size: 18px;
+                                text-align: center;
+                                background: rgba(0,0,0,0.7);
+                                padding: 10px 20px;
+                                border-radius: 5px;
                               `;
                               
                               // Add close button overlay
                               const closeButton = document.createElement('button');
-                              closeButton.textContent = '✕ Close Scanner';
+                              closeButton.textContent = '✕ Close';
                               closeButton.style.cssText = `
-                                position: fixed;
+                                position: absolute;
                                 top: 20px;
                                 right: 20px;
-                                z-index: 10000;
-                                background: rgba(0,0,0,0.7);
-                                color: white;
+                                background: rgba(255,255,255,0.9);
+                                color: black;
                                 border: none;
-                                padding: 10px 20px;
-                                border-radius: 5px;
+                                padding: 12px 20px;
+                                border-radius: 25px;
                                 font-size: 16px;
+                                font-weight: bold;
                                 cursor: pointer;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
                               `;
                               
-                              document.body.appendChild(videoElement);
-                              document.body.appendChild(closeButton);
+                              overlay.appendChild(videoElement);
+                              overlay.appendChild(instructionText);
+                              overlay.appendChild(closeButton);
+                              document.body.appendChild(overlay);
                               
                               const stopScanning = () => {
                                 codeReader.reset();
-                                document.body.removeChild(videoElement);
-                                document.body.removeChild(closeButton);
+                                document.body.removeChild(overlay);
                                 setIsScanning(false);
                               };
                               
@@ -515,7 +547,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                                   field.onChange(scannedValue);
                                   
                                   toast({
-                                    title: "Barcode scanned successfully",
+                                    title: "Barcode scanned!",
                                     description: `Serial number: ${scannedValue}`,
                                   });
                                   
@@ -529,9 +561,19 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                               
                             } catch (error) {
                               console.error('Scanner error:', error);
+                              let errorMessage = "Please allow camera access when prompted.";
+                              
+                              if (error.name === 'NotAllowedError') {
+                                errorMessage = "Camera permission denied. Please allow camera access in your browser settings and try again.";
+                              } else if (error.name === 'NotFoundError') {
+                                errorMessage = "No camera found on this device.";
+                              } else if (error.name === 'NotSupportedError') {
+                                errorMessage = "Camera not supported on this device.";
+                              }
+                              
                               toast({
-                                title: "Scanner failed to start",
-                                description: "Please check camera permissions and try again.",
+                                title: "Cannot access camera",
+                                description: errorMessage,
                                 variant: "destructive"
                               });
                               setIsScanning(false);
