@@ -25,6 +25,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Loader2, Camera, Upload, Cloud, QrCode } from "lucide-react";
+import { BrowserMultiFormatReader } from '@zxing/library';
 import { useToast } from "@/hooks/use-toast";
 import FileUpload from "@/components/common/file-upload";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,6 +74,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoUploadMethod, setPhotoUploadMethod] = useState<'camera' | 'file' | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
 
   // Fetch repair data if editing
   const { data: repair, isLoading: isLoadingRepair } = useQuery({
@@ -443,70 +445,104 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                           type="button" 
                           variant="outline" 
                           size="sm"
+                          disabled={isScanning}
                           onClick={async () => {
+                            setIsScanning(true);
+                            
                             try {
-                              // Try to use the device's barcode scanner capability
-                              if ('BarcodeDetector' in window) {
-                                const barcodeDetector = new window.BarcodeDetector();
-                                const stream = await navigator.mediaDevices.getUserMedia({ 
-                                  video: { facingMode: 'environment' } 
-                                });
-                                
-                                const video = document.createElement('video');
-                                video.srcObject = stream;
-                                video.play();
-                                
-                                video.onloadedmetadata = async () => {
-                                  try {
-                                    const barcodes = await barcodeDetector.detect(video);
-                                    if (barcodes.length > 0) {
-                                      const scannedValue = barcodes[0].rawValue;
-                                      field.onChange(scannedValue);
-                                      toast({
-                                        title: "Barcode scanned",
-                                        description: "Serial number has been filled automatically.",
-                                      });
-                                    }
-                                  } catch (error) {
-                                    toast({
-                                      title: "Scanning failed",
-                                      description: "Please enter the serial number manually or use your phone's barcode scanner app.",
-                                      variant: "destructive"
-                                    });
-                                  }
-                                  stream.getTracks().forEach(track => track.stop());
-                                };
-                              } else {
-                                // Fallback: Show instructions for using phone's barcode scanner
-                                toast({
-                                  title: "Use your barcode scanner app",
-                                  description: "Open your phone's barcode scanner app, scan the code, then paste the result here.",
-                                });
-                                
-                                // Try to read from clipboard if user has scanned with another app
-                                try {
-                                  const clipboardText = await navigator.clipboard.readText();
-                                  if (clipboardText && clipboardText.length > 5) {
-                                    field.onChange(clipboardText);
-                                    toast({
-                                      title: "Pasted from clipboard",
-                                      description: "Serial number filled from your clipboard.",
-                                    });
-                                  }
-                                } catch (clipboardError) {
-                                  // Clipboard access failed, that's okay
-                                }
+                              const codeReader = new BrowserMultiFormatReader();
+                              
+                              // Get camera devices
+                              const videoInputDevices = await codeReader.listVideoInputDevices();
+                              
+                              if (videoInputDevices.length === 0) {
+                                throw new Error('No camera found');
                               }
+                              
+                              // Use back camera if available, otherwise use first available
+                              const selectedDeviceId = videoInputDevices.find(device => 
+                                device.label.toLowerCase().includes('back') || 
+                                device.label.toLowerCase().includes('rear') ||
+                                device.label.toLowerCase().includes('environment')
+                              )?.deviceId || videoInputDevices[0].deviceId;
+                              
+                              // Create a video element for preview
+                              const videoElement = document.createElement('video');
+                              videoElement.style.cssText = `
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                width: 100vw;
+                                height: 100vh;
+                                object-fit: cover;
+                                z-index: 9999;
+                                background: black;
+                              `;
+                              
+                              // Add close button overlay
+                              const closeButton = document.createElement('button');
+                              closeButton.textContent = '✕ Close Scanner';
+                              closeButton.style.cssText = `
+                                position: fixed;
+                                top: 20px;
+                                right: 20px;
+                                z-index: 10000;
+                                background: rgba(0,0,0,0.7);
+                                color: white;
+                                border: none;
+                                padding: 10px 20px;
+                                border-radius: 5px;
+                                font-size: 16px;
+                                cursor: pointer;
+                              `;
+                              
+                              document.body.appendChild(videoElement);
+                              document.body.appendChild(closeButton);
+                              
+                              const stopScanning = () => {
+                                codeReader.reset();
+                                document.body.removeChild(videoElement);
+                                document.body.removeChild(closeButton);
+                                setIsScanning(false);
+                              };
+                              
+                              closeButton.onclick = stopScanning;
+                              
+                              // Start scanning
+                              codeReader.decodeFromVideoDevice(selectedDeviceId, videoElement, (result, error) => {
+                                if (result) {
+                                  const scannedValue = result.getText();
+                                  field.onChange(scannedValue);
+                                  
+                                  toast({
+                                    title: "Barcode scanned successfully",
+                                    description: `Serial number: ${scannedValue}`,
+                                  });
+                                  
+                                  stopScanning();
+                                }
+                                
+                                if (error && !(error.name === 'NotFoundException')) {
+                                  console.log('Scanning error:', error);
+                                }
+                              });
+                              
                             } catch (error) {
+                              console.error('Scanner error:', error);
                               toast({
-                                title: "Scanner not available",
-                                description: "Please use your phone's barcode scanner app and paste the result.",
+                                title: "Scanner failed to start",
+                                description: "Please check camera permissions and try again.",
                                 variant: "destructive"
                               });
+                              setIsScanning(false);
                             }
                           }}
                         >
-                          <QrCode className="h-4 w-4" />
+                          {isScanning ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <QrCode className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </FormControl>
