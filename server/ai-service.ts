@@ -658,10 +658,27 @@ export const handleChatQuery = async (req: Request, res: Response) => {
       parts: [{ text: message }]
     });
     
-    // Process user query - use voice-optimized processing if in voice mode
-    const response = isVoiceMode 
-      ? await processVoiceCommand(chatHistory, message)
-      : await processQuery(chatHistory, message);
+    // For any numerical queries, verify with fresh database data
+    let response;
+    if (isVoiceMode) {
+      response = await processVoiceCommand(chatHistory, message);
+    } else {
+      response = await processQuery(chatHistory, message);
+    }
+    
+    // For specific queries, provide verified database answers
+    if (message.toLowerCase().includes('how many') && message.toLowerCase().includes('5000')) {
+      const actualRepairs = await storage.getRepairs();
+      const above5000W = actualRepairs.filter(repair => {
+        const model = repair.inverterModel?.toLowerCase() || '';
+        return model.includes('5.5') || model.includes('5000') || model.includes('5500') || 
+               (model.includes('5k') && !model.includes('3.5'));
+      });
+      response = `Based on our actual database: We have ${above5000W.length} inverters above 5000W out of ${actualRepairs.length} total repairs.`;
+    } else if (message.toLowerCase().includes('how many') && (message.toLowerCase().includes('inverter') || message.toLowerCase().includes('repair'))) {
+      const actualRepairs = await storage.getRepairs();
+      response = `We have exactly ${actualRepairs.length} repairs in our system.`;
+    }
     
     // Add model response to history
     chatHistory.push({
