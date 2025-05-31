@@ -33,6 +33,11 @@ interface ChatMessage {
 
 const chatSessions: Map<string, Content[]> = new Map();
 
+// Clear chat sessions periodically to prevent stale data
+setInterval(() => {
+  chatSessions.clear();
+}, 60000); // Clear every minute to ensure fresh data
+
 // Formats data for system context
 const getSystemContext = async () => {
   try {
@@ -598,8 +603,14 @@ export const handleChatQuery = async (req: Request, res: Response) => {
       });
     }
     
-    // Get or initialize chat history
-    let chatHistory = chatSessions.get(sessionId) || [];
+    // Clear this session to force fresh data
+    chatSessions.delete(sessionId);
+    
+    // Always get fresh system context for accurate data
+    const freshSystemContext = await getSystemContext();
+    
+    // Start with empty chat history to ensure fresh context
+    let chatHistory: Content[] = [];
     
     // Add user message to history
     chatHistory.push({
