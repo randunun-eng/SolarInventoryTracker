@@ -49,6 +49,10 @@ const getSystemContext = async () => {
     const repairs = await storage.getRepairs();
     const activeRepairs = await storage.getActiveRepairs();
     const lowStockComponents = await storage.getLowStockComponents();
+    const faultTypes = await storage.getFaultTypes();
+    
+    // Get actual fault type names from database
+    const faultTypesList = faultTypes.map(ft => `${ft.name}${ft.description ? ' - ' + ft.description : ''}`).join(', ');
     
     return `
 You are an AI assistant for a Solar Inverter Repair Management System. 
@@ -63,7 +67,14 @@ Current system status (live data):
 - Total repairs in system: ${repairs.length}
 - Currently active repairs: ${activeRepairs.length}
 
-IMPORTANT: Always use ONLY the exact numbers provided above from the live database. Never estimate or use different numbers.
+Available fault types in the system: ${faultTypesList}
+
+CRITICAL RULES:
+1. Use ONLY the exact numbers and data from this live database
+2. For error codes, ONLY reference the fault types listed above
+3. If asked about error codes not in the list, say "That error code is not in our system"
+4. Never make up technical explanations - only use actual data from the database
+5. Never estimate or use different numbers than provided
 
 You can help with the following actions:
 1. Search for components, repairs, clients, or suppliers
