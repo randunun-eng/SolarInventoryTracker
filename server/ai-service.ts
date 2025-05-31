@@ -38,10 +38,10 @@ setInterval(() => {
   chatSessions.clear();
 }, 60000); // Clear every minute to ensure fresh data
 
-// Formats data for system context
+// Formats complete system data for AI context
 const getSystemContext = async () => {
   try {
-    // Get relevant data counts for context
+    // Get all actual system data in real-time
     const components = await storage.getComponents();
     const categories = await storage.getCategories();
     const suppliers = await storage.getSuppliers();
@@ -51,23 +51,44 @@ const getSystemContext = async () => {
     const lowStockComponents = await storage.getLowStockComponents();
     const faultTypes = await storage.getFaultTypes();
     
-    // Get actual fault type names from database
+    // Get detailed fault type information
     const faultTypesList = faultTypes.map(ft => `${ft.name}${ft.description ? ' - ' + ft.description : ''}`).join(', ');
     
+    // Get comprehensive client data
+    const clientDetails = clients.map(client => 
+      `Client ID ${client.id}: ${client.name} (${client.email || 'No email'}, ${client.phone || 'No phone'})`
+    ).join(', ');
+    
+    // Get detailed repair information with photos and notes
+    const repairDetails = repairs.map(repair => {
+      const client = clients.find(c => c.id === repair.clientId);
+      const faultType = faultTypes.find(ft => ft.id === repair.faultTypeId);
+      return `Repair #${repair.id}: ${client?.name || 'Unknown client'} - ${repair.inverterModel || 'No model'} - ${faultType?.name || 'Unknown fault'} - Status: ${repair.status} - Notes: ${repair.technicianNotes || 'No notes'} - Serial: ${repair.inverterSerialNumber || 'N/A'} - Received: ${repair.receivedDate} - Priority: ${repair.priority}`;
+    }).join('\n');
+    
+    // Get component usage data
+    const componentDetails = components.map(comp => 
+      `${comp.name} (Stock: ${comp.currentStock}/${comp.minimumStock}, Location: ${comp.location || 'Not specified'})`
+    ).join(', ');
+    
     return `
-You are an AI assistant for a Solar Inverter Repair Management System. 
-This system manages inventory, repairs, clients, and suppliers for a solar equipment repair business.
+You are an AI assistant with COMPLETE REAL-TIME ACCESS to a Solar Inverter Repair Management System database and all uploaded files.
 
-Current system status (live data):
-- Total components in inventory: ${components.length}
-- Components with low stock: ${lowStockComponents.length}
-- Component categories: ${categories.length}
-- Suppliers: ${suppliers.length}
-- Clients: ${clients.length}
-- Total repairs in system: ${repairs.length}
-- Currently active repairs: ${activeRepairs.length}
+=== LIVE SYSTEM DATA (Updated in real-time) ===
+Total components: ${components.length} | Low stock: ${lowStockComponents.length} | Categories: ${categories.length}
+Suppliers: ${suppliers.length} | Clients: ${clients.length} | Total repairs: ${repairs.length} | Active repairs: ${activeRepairs.length}
 
-Available fault types in the system: ${faultTypesList}
+=== COMPLETE CLIENT DATABASE ===
+${clientDetails}
+
+=== ALL FAULT TYPES ===
+${faultTypesList}
+
+=== COMPLETE REPAIR RECORDS WITH DETAILS ===
+${repairDetails}
+
+=== FULL COMPONENT INVENTORY ===
+${componentDetails}
 
 CRITICAL RULES:
 1. Use ONLY the exact numbers and data from this live database for system counts
