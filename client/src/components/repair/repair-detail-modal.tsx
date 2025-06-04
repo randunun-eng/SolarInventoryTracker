@@ -260,7 +260,7 @@ export function RepairDetailModal({
                         onClick={() => setShowAddComponent(!showAddComponent)}
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Add Component
+                        {usedComponents && usedComponents.length > 0 ? 'Add Component' : 'Add First Component'}
                       </Button>
                     )}
                   </div>
@@ -376,16 +376,9 @@ export function RepairDetailModal({
                     </Table>
                   ) : (
                     <div className="text-center p-6 bg-slate-50 rounded-lg">
-                      <p className="text-sm text-slate-500 mb-2">No components have been used in this repair yet.</p>
-                      {repair.status !== "Completed" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowAddComponent(true)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add First Component
-                        </Button>
+                      <p className="text-sm text-slate-500">No components have been used in this repair yet.</p>
+                      {repair.status === "Completed" && (
+                        <p className="text-xs text-slate-400 mt-1">Repair is completed - no more components can be added</p>
                       )}
                     </div>
                   )}
