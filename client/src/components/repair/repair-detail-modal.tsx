@@ -5,13 +5,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatCurrency, getStatusColor } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, FileText, Edit, Check, Clock } from "lucide-react";
+import { Loader2, FileText, Edit, Check, Clock, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface RepairDetailModalProps {
   repairId: number | null;
@@ -26,6 +38,13 @@ export function RepairDetailModal({
   onClose, 
   onEdit 
 }: RepairDetailModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showAddComponent, setShowAddComponent] = useState(false);
+  const [selectedComponentId, setSelectedComponentId] = useState<string>("");
+  const [quantity, setQuantity] = useState<string>("1");
+  const [unitPrice, setUnitPrice] = useState<string>("0");
+
   // Fetch repair data
   const { data: repair, isLoading: isLoadingRepair } = useQuery({
     queryKey: repairId ? [`/api/repairs/${repairId}`] : null,
@@ -61,6 +80,60 @@ export function RepairDetailModal({
     queryKey: usedComponents ? ['/api/components'] : null,
     enabled: !!usedComponents && usedComponents.length > 0,
   });
+
+  // Fetch all available components for adding
+  const { data: availableComponents } = useQuery({
+    queryKey: ["/api/components"],
+    enabled: isOpen,
+  });
+
+  // Add component mutation
+  const addComponentMutation = useMutation({
+    mutationFn: async (data: { repairId: number; componentId: number; quantity: number; unitPrice: number }) => {
+      return apiRequest("POST", `/api/repairs/${data.repairId}/components`, {
+        componentId: data.componentId,
+        quantity: data.quantity,
+        unitPrice: data.unitPrice,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/repairs/${repairId}/components`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/repairs/${repairId}`] });
+      setShowAddComponent(false);
+      setSelectedComponentId("");
+      setQuantity("1");
+      setUnitPrice("0");
+      toast({
+        title: "Component added",
+        description: "Component has been added to the repair successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to add component: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddComponent = () => {
+    if (!repairId || !selectedComponentId || !quantity || !unitPrice) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addComponentMutation.mutate({
+      repairId,
+      componentId: parseInt(selectedComponentId),
+      quantity: parseInt(quantity),
+      unitPrice: parseFloat(unitPrice),
+    });
+  };
 
   if (!isOpen) return null;
 
@@ -178,7 +251,87 @@ export function RepairDetailModal({
                 </div>
                 
                 <div className="mb-6">
-                  <p className="text-sm font-medium text-slate-500 mb-2">Components Used</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-sm font-medium text-slate-500">Components Used</p>
+                    {repair.status !== "Completed" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAddComponent(!showAddComponent)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Component
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Add Component Form */}
+                  {showAddComponent && (
+                    <div className="bg-slate-50 p-4 rounded-lg mb-4">
+                      <h5 className="text-sm font-medium text-slate-700 mb-3">Add Component to Repair</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                          <Label htmlFor="component-select" className="text-xs text-slate-600">Component</Label>
+                          <Select value={selectedComponentId} onValueChange={setSelectedComponentId}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select component" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableComponents?.map((component: any) => (
+                                <SelectItem key={component.id} value={component.id.toString()}>
+                                  {component.name} ({component.partNumber})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="quantity" className="text-xs text-slate-600">Quantity</Label>
+                          <Input
+                            id="quantity"
+                            type="number"
+                            min="1"
+                            value={quantity}
+                            onChange={(e) => setQuantity(e.target.value)}
+                            placeholder="1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="unit-price" className="text-xs text-slate-600">Unit Price</Label>
+                          <Input
+                            id="unit-price"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={unitPrice}
+                            onChange={(e) => setUnitPrice(e.target.value)}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div className="flex items-end gap-2">
+                          <Button
+                            size="sm"
+                            onClick={handleAddComponent}
+                            disabled={addComponentMutation.isPending}
+                          >
+                            {addComponentMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Add"
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowAddComponent(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {isLoadingComponents ? (
                     <div className="flex items-center justify-center p-4">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -222,7 +375,19 @@ export function RepairDetailModal({
                       </TableBody>
                     </Table>
                   ) : (
-                    <p className="text-sm text-slate-500 p-2">No components have been used in this repair yet.</p>
+                    <div className="text-center p-6 bg-slate-50 rounded-lg">
+                      <p className="text-sm text-slate-500 mb-2">No components have been used in this repair yet.</p>
+                      {repair.status !== "Completed" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowAddComponent(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add First Component
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
                 
