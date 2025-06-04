@@ -69,16 +69,11 @@ export default function RepairStatusPage() {
       );
     },
     onSuccess: () => {
-      // Invalidate ALL repair data to ensure UI is refreshed
-      queryClient.invalidateQueries({ queryKey: ['/api/repairs'] });
+      // Invalidate repair data to refresh UI
       queryClient.invalidateQueries({ queryKey: [`/api/repairs/${repairId}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/repairs'] });
       queryClient.invalidateQueries({ queryKey: ['/api/repairs/active'] });
       queryClient.invalidateQueries({ queryKey: ['/api/repairs/recent'] });
-      
-      // Force a window reload to ensure all components refresh
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
       
       // Close dialog
       setIsDialogOpen(false);
