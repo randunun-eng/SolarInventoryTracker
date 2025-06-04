@@ -249,7 +249,8 @@ export default function Repairs() {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Client</TableHead>
-                    <TableHead>Inverter</TableHead>
+                    <TableHead>Inverter Model</TableHead>
+                    <TableHead>Serial Number</TableHead>
                     <TableHead>Received Date</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Technician</TableHead>
@@ -263,7 +264,8 @@ export default function Repairs() {
                       <TableRow key={repair.id}>
                         <TableCell className="font-medium">#{repair.id}</TableCell>
                         <TableCell>{getClientName(repair.clientId)}</TableCell>
-                        <TableCell>{getInverterDetails(repair.inverterId)}</TableCell>
+                        <TableCell>{repair.inverterModel || "—"}</TableCell>
+                        <TableCell>{repair.inverterSerialNumber || "—"}</TableCell>
                         <TableCell>{formatDateTime(repair.receivedDate)}</TableCell>
                         <TableCell>
                           <Badge className={`${statusColors.bg} ${statusColors.text}`}>
