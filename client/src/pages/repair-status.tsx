@@ -128,8 +128,8 @@ export default function RepairStatusPage() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Repair Status Tracking</h1>
-        <Button variant="outline" onClick={() => setLocation(`/repairs/${repairId}`)}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Repair Details
+        <Button variant="outline" onClick={() => setLocation('/repairs')}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Repairs
         </Button>
       </div>
       
