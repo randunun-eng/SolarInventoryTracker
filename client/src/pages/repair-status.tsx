@@ -43,8 +43,20 @@ export default function RepairStatusPage() {
 
   // Fetch repair details
   const { data: repair, isLoading, error } = useQuery<Repair>({
-    queryKey: ['/api/repairs', repairId],
+    queryKey: [`/api/repairs/${repairId}`],
     enabled: !isNaN(repairId)
+  });
+
+  // Fetch client data
+  const { data: client } = useQuery({
+    queryKey: [`/api/clients/${repair?.clientId}`],
+    enabled: !!repair?.clientId,
+  });
+
+  // Fetch fault type data
+  const { data: faultType } = useQuery({
+    queryKey: [`/api/fault-types/${repair?.faultTypeId}`],
+    enabled: !!repair?.faultTypeId,
   });
   
   // Status update mutation
@@ -133,13 +145,13 @@ export default function RepairStatusPage() {
         <CardContent>
           <div className="flex flex-col md:flex-row justify-between gap-6">
             <div>
-              <p><strong>Client:</strong> {repair.clientName}</p>
+              <p><strong>Client:</strong> {client?.name || 'Loading...'}</p>
               <p><strong>Inverter:</strong> {repair.inverterModel || "Not specified"} {repair.inverterSerialNumber && `(S/N: ${repair.inverterSerialNumber})`}</p>
               <p><strong>Received Date:</strong> {new Date(repair.receivedDate).toLocaleDateString()}</p>
             </div>
             <div>
               <p><strong>Current Status:</strong> {repair.status}</p>
-              <p><strong>Fault Type:</strong> {repair.faultTypeName || 'Not specified'}</p>
+              <p><strong>Fault Type:</strong> {faultType?.name || 'Loading...'}</p>
               <p><strong>Fault Description:</strong> {repair.faultDescription || 'No description provided'}</p>
             </div>
           </div>
