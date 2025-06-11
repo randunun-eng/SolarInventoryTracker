@@ -140,13 +140,13 @@ export default function RepairStatusPage() {
         <CardContent>
           <div className="flex flex-col md:flex-row justify-between gap-6">
             <div>
-              <p><strong>Client:</strong> {client?.name || 'Loading...'}</p>
+              <p><strong>Client:</strong> {(client as any)?.name || 'Loading...'}</p>
               <p><strong>Inverter:</strong> {repair.inverterModel || "Not specified"} {repair.inverterSerialNumber && `(S/N: ${repair.inverterSerialNumber})`}</p>
               <p><strong>Received Date:</strong> {new Date(repair.receivedDate).toLocaleDateString()}</p>
             </div>
             <div>
               <p><strong>Current Status:</strong> {repair.status}</p>
-              <p><strong>Fault Type:</strong> {faultType?.name || 'Loading...'}</p>
+              <p><strong>Fault Type:</strong> {(faultType as any)?.name || 'Loading...'}</p>
               <p><strong>Fault Description:</strong> {repair.faultDescription || 'No description provided'}</p>
             </div>
           </div>
