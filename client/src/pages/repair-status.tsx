@@ -48,13 +48,13 @@ export default function RepairStatusPage() {
   });
 
   // Fetch client data
-  const { data: client } = useQuery({
+  const { data: client = {} } = useQuery({
     queryKey: [`/api/clients/${repair?.clientId}`],
     enabled: !!repair?.clientId,
   });
 
   // Fetch fault type data
-  const { data: faultType } = useQuery({
+  const { data: faultType = {} } = useQuery({
     queryKey: [`/api/fault-types/${repair?.faultTypeId}`],
     enabled: !!repair?.faultTypeId,
   });

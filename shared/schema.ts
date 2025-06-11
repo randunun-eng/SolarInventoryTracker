@@ -174,6 +174,7 @@ export const statusHistoryEntrySchema = z.object({
   note: z.string().nullable(),
   userId: z.number().nullable(),
   userName: z.string().nullable(),
+  photos: z.array(z.string()).optional(),
 });
 
 export type StatusHistoryEntry = z.infer<typeof statusHistoryEntrySchema>;

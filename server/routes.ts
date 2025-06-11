@@ -834,7 +834,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const schema = z.object({ 
         status: RepairStatusEnum,
         notes: z.string(),
-        timestamp: z.string().optional()
+        timestamp: z.string().optional(),
+        photos: z.array(z.string()).optional()
       });
       
       // Safely parse the request body
@@ -846,7 +847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid request body format" });
       }
       
-      const { status, notes, timestamp } = schema.parse(requestData);
+      const { status, notes, timestamp, photos } = schema.parse(requestData);
       
       const repair = await storage.getRepair(id);
       if (!repair) {
@@ -854,12 +855,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create a status history entry
-      const statusHistoryEntry: StatusHistoryEntry = {
+      const statusHistoryEntry = {
         status,
         timestamp: timestamp ? new Date(timestamp) : new Date(),
         note: notes || null,
         userId: null, // Can be updated when authentication is implemented
-        userName: null
+        userName: null,
+        photos: photos || []
       };
       
       // Get existing status history or initialize empty array

@@ -10,6 +10,7 @@ export type StatusHistoryEntry = {
   note?: string;
   userId?: number;
   userName?: string;
+  photos?: string[];
 };
 
 interface StatusHistoryProps {
@@ -61,6 +62,22 @@ export function StatusHistory({ history, className }: StatusHistoryProps) {
                     <p className="text-sm text-muted-foreground mt-1">
                       {entry.note}
                     </p>
+                  )}
+
+                  {entry.photos && entry.photos.length > 0 && (
+                    <div className="mt-2">
+                      <div className="grid grid-cols-2 gap-2 max-w-md">
+                        {entry.photos.map((photo, photoIndex) => (
+                          <img
+                            key={photoIndex}
+                            src={photo}
+                            alt={`Status update photo ${photoIndex + 1}`}
+                            className="w-full h-24 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => window.open(photo, '_blank')}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
                   
                   {entry.userName && (
