@@ -1133,7 +1133,7 @@ function generateRepairReportHTML(
         @media print {
           body { margin: 0; }
           .no-print { display: none; }
-          img { max-height: 100px !important; }
+          img { max-width: 120px !important; height: auto !important; }
         }
         @page {
           size: A4;
@@ -1368,10 +1368,10 @@ function generateRepairReportHTML(
               ${update.photos && update.photos.length > 0 ? `
                 <div style="margin-top: 15px;">
                   <div class="info-label" style="margin-bottom: 10px;">Attached Photos (${update.photos.length}):</div>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 200px)); gap: 15px; margin-top: 10px; justify-content: start;">
                     ${update.photos.map((photo: string) => `
                       <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: white;">
-                        <img src="${photo}" alt="Progress photo" style="width: 100%; height: 150px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" />
+                        <img src="${photo}" alt="Progress photo" style="width: 100%; max-width: 200px; height: auto; object-fit: contain; border-radius: 6px; margin-bottom: 8px;" />
                         <div style="font-size: 12px; color: #64748b; text-align: center;">Progress Photo</div>
                       </div>
                     `).join('')}
