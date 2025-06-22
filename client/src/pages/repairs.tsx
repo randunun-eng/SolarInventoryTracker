@@ -376,27 +376,29 @@ export default function Repairs() {
 
       {/* Update Progress Modal */}
       <Dialog open={isProgressModalOpen} onOpenChange={setIsProgressModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Update Repair Progress</DialogTitle>
             <DialogDescription>
               Update the status and add notes about the progress of this repair.
             </DialogDescription>
           </DialogHeader>
-          <UpdateProgressForm 
-            repairId={progressRepairId || undefined} 
-            onSuccess={() => {
-              setIsProgressModalOpen(false);
-              queryClient.invalidateQueries({ queryKey: ["/api/repairs"] });
-              if (progressRepairId) {
-                queryClient.invalidateQueries({ queryKey: [`/api/repairs/${progressRepairId}`] });
-              }
-              toast({
-                title: "Progress updated",
-                description: "The repair progress has been updated successfully.",
-              });
-            }} 
-          />
+          <div className="max-h-[calc(90vh-120px)] overflow-y-auto pr-2">
+            <UpdateProgressForm 
+              repairId={progressRepairId || undefined} 
+              onSuccess={() => {
+                setIsProgressModalOpen(false);
+                queryClient.invalidateQueries({ queryKey: ["/api/repairs"] });
+                if (progressRepairId) {
+                  queryClient.invalidateQueries({ queryKey: [`/api/repairs/${progressRepairId}`] });
+                }
+                toast({
+                  title: "Progress updated",
+                  description: "The repair progress has been updated successfully.",
+                });
+              }} 
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
