@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -22,10 +29,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Camera, Upload, X } from "lucide-react";
+import { Loader2, Camera, Upload, X, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const statusUpdateSchema = z.object({
   note: z.string().optional(),
+  date: z.date().optional(),
   photos: z.array(z.string()).optional(),
 });
 
@@ -34,7 +43,7 @@ type StatusUpdateFormValues = z.infer<typeof statusUpdateSchema>;
 interface StatusUpdateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (note: string, photos?: string[]) => void;
+  onConfirm: (note: string, photos?: string[], date?: Date) => void;
   currentStatus: string;
   newStatus: string;
   isLoading?: boolean;
@@ -56,12 +65,13 @@ export function StatusUpdateDialog({
     resolver: zodResolver(statusUpdateSchema),
     defaultValues: {
       note: "",
+      date: new Date(),
       photos: [],
     },
   });
 
   const handleSubmit = (values: StatusUpdateFormValues) => {
-    onConfirm(values.note || "", photos);
+    onConfirm(values.note || "", photos, values.date);
   };
 
   // Handle camera capture
@@ -183,6 +193,49 @@ export function StatusUpdateDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {/* Date Picker */}
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Status Update Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="note"

@@ -61,11 +61,11 @@ export default function RepairStatusPage() {
   
   // Status update mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ status, note, photos }: { status: string, note: string, photos?: string[] }) => {
+    mutationFn: async ({ status, note, photos, date }: { status: string, note: string, photos?: string[], date?: Date }) => {
       return apiRequest(
         'PATCH',
         `/api/repairs/${repairId}/status`,
-        { status, notes: note, photos }
+        { status, notes: note, photos, timestamp: date?.toISOString() }
       );
     },
     onSuccess: () => {
@@ -88,9 +88,9 @@ export default function RepairStatusPage() {
   };
   
   // Handler for status update confirmation
-  const handleStatusUpdateConfirm = (note: string, photos?: string[]) => {
+  const handleStatusUpdateConfirm = (note: string, photos?: string[], date?: Date) => {
     if (targetStatus) {
-      updateStatusMutation.mutate({ status: targetStatus, note, photos });
+      updateStatusMutation.mutate({ status: targetStatus, note, photos, date });
     }
   };
   
