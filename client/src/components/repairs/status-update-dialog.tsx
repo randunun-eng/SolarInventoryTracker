@@ -76,10 +76,10 @@ export function StatusUpdateDialog({
 
   // Handle camera capture
   const handleCameraCapture = async () => {
-    if (photos.length >= 3) {
+    if (photos.length >= 5) {
       toast({
         title: "Maximum photos reached",
-        description: "You can only upload up to 3 photos per status update.",
+        description: "You can only upload up to 5 photos per status update.",
         variant: "destructive"
       });
       return;
@@ -136,15 +136,17 @@ export function StatusUpdateDialog({
     }
   };
 
-  // Handle file upload
+  // Handle file upload with improved validation and multiple file support
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     
-    if (photos.length >= 3) {
+    // Check remaining slots
+    const remainingSlots = 5 - photos.length;
+    if (remainingSlots <= 0) {
       toast({
         title: "Maximum photos reached",
-        description: "You can only upload up to 3 photos per status update.",
+        description: "You can only upload up to 5 photos per status update.",
         variant: "destructive"
       });
       return;
@@ -152,27 +154,83 @@ export function StatusUpdateDialog({
     
     setIsUploading(true);
     
-    const file = files[0];
-    const reader = new FileReader();
+    // Process multiple files up to the remaining slots
+    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    const newPhotos: string[] = [];
+    let processedCount = 0;
     
-    reader.onload = (e) => {
-      if (e.target && e.target.result) {
-        const dataUrl = e.target.result as string;
-        setPhotos(prev => [...prev, dataUrl]);
+    filesToProcess.forEach((file) => {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 10MB. Skipping.`,
+          variant: "destructive"
+        });
+        processedCount++;
+        if (processedCount === filesToProcess.length) {
+          setPhotos(prev => [...prev, ...newPhotos]);
+          setIsUploading(false);
+        }
+        return;
       }
-      setIsUploading(false);
-    };
-    
-    reader.onerror = () => {
-      toast({
-        title: "Upload failed",
-        description: "Failed to read the image file.",
-        variant: "destructive"
-      });
-      setIsUploading(false);
-    };
-    
-    reader.readAsDataURL(file);
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not an image file. Skipping.`,
+          variant: "destructive"
+        });
+        processedCount++;
+        if (processedCount === filesToProcess.length) {
+          setPhotos(prev => [...prev, ...newPhotos]);
+          setIsUploading(false);
+        }
+        return;
+      }
+      
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        if (e.target && e.target.result) {
+          const dataUrl = e.target.result as string;
+          newPhotos.push(dataUrl);
+        }
+        processedCount++;
+        
+        if (processedCount === filesToProcess.length) {
+          setPhotos(prev => [...prev, ...newPhotos]);
+          setIsUploading(false);
+          
+          if (newPhotos.length > 0) {
+            toast({
+              title: "Photos uploaded",
+              description: `${newPhotos.length} photo(s) added to status update.`,
+            });
+          }
+        }
+      };
+      
+      reader.onerror = () => {
+        processedCount++;
+        toast({
+          title: "Upload failed",
+          description: `Failed to read ${file.name}.`,
+          variant: "destructive"
+        });
+        
+        if (processedCount === filesToProcess.length) {
+          setPhotos(prev => [...prev, ...newPhotos]);
+          setIsUploading(false);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input for future uploads
+    event.target.value = '';
   };
 
   // Remove a photo
@@ -255,7 +313,12 @@ export function StatusUpdateDialog({
 
             {/* Photo Upload Section */}
             <div className="space-y-3">
-              <FormLabel>Photos (Optional)</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>Attachments (Optional)</FormLabel>
+                <span className="text-sm text-muted-foreground">
+                  {photos.length}/5 photos
+                </span>
+              </div>
               
               {/* Photo Upload Buttons */}
               <div className="flex gap-2">
@@ -264,7 +327,7 @@ export function StatusUpdateDialog({
                   variant="outline"
                   size="sm"
                   onClick={handleCameraCapture}
-                  disabled={isUploading || photos.length >= 3}
+                  disabled={isUploading || photos.length >= 5}
                 >
                   {isUploading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -279,20 +342,27 @@ export function StatusUpdateDialog({
                   variant="outline"
                   size="sm"
                   onClick={() => document.getElementById('photo-upload')?.click()}
-                  disabled={isUploading || photos.length >= 3}
+                  disabled={isUploading || photos.length >= 5}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Upload Photo
+                  Upload Photos
                 </Button>
                 
                 <Input
                   id="photo-upload"
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleFileUpload}
                   className="hidden"
                 />
               </div>
+              
+              {photos.length >= 5 && (
+                <p className="text-sm text-muted-foreground">
+                  Maximum number of photos reached. Remove some to add more.
+                </p>
+              )}
               
               {/* Photo Preview Grid */}
               {photos.length > 0 && (
