@@ -468,15 +468,14 @@ export function RepairDetailModal({
                 <div className="flex justify-end space-x-3">
                   <Button 
                     variant="outline"
-                    onClick={handleGeneratePDF}
-                    disabled={isGeneratingPDF}
+                    onClick={() => {
+                      if (repairId) {
+                        window.open(`/api/repairs/${repairId}/report`, '_blank');
+                      }
+                    }}
                   >
-                    {isGeneratingPDF ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Download className="mr-2 h-4 w-4 text-blue-600" />
-                    )}
-                    {isGeneratingPDF ? 'Generating...' : 'Download PDF Report'}
+                    <Download className="mr-2 h-4 w-4 text-blue-600" />
+                    Download PDF Report
                   </Button>
                   <Button 
                     variant="outline"

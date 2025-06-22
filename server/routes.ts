@@ -971,6 +971,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PDF Report generation endpoint
+  app.get("/api/repairs/:id/report", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    
+    try {
+      const repairId = parseInt(id);
+      if (isNaN(repairId)) {
+        return res.status(400).json({ error: "Invalid repair ID" });
+      }
+      
+      // Fetch repair data
+      const repair = await storage.getRepair(repairId);
+      if (!repair) {
+        return res.status(404).json({ error: "Repair not found" });
+      }
+      
+      // Fetch related data
+      const client = repair.clientId ? await storage.getClient(repair.clientId) : null;
+      const inverter = repair.inverterId ? await storage.getInverter(repair.inverterId) : null;
+      const faultType = repair.faultTypeId ? await storage.getFaultType(repair.faultTypeId) : null;
+      const usedComponents = await storage.getRepairComponents(repairId);
+      
+      // Generate HTML content for PDF
+      const htmlContent = generateRepairReportHTML(
+        repair,
+        client,
+        inverter,
+        faultType,
+        usedComponents
+      );
+      
+      // Generate PDF using Puppeteer
+      const puppeteer = require('puppeteer');
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+      
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          right: '15mm',
+          bottom: '20mm',
+          left: '15mm'
+        }
+      });
+      
+      await browser.close();
+      
+      // Set headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="repair-report-${repairId}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      res.send(pdfBuffer);
+      
+    } catch (error) {
+      console.error("Error generating repair report:", error);
+      res.status(500).json({ error: "Failed to generate repair report" });
+    }
+  });
+
   // Settings API endpoints
   app.get("/api/settings/:key", async (req: Request, res: Response) => {
     try {
@@ -1051,4 +1118,308 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
   return httpServer;
+}
+
+// Helper function to generate HTML content for PDF reports
+function generateRepairReportHTML(
+  repair: any,
+  client: any,
+  inverter: any,
+  faultType: any,
+  usedComponents: any[]
+) {
+  const components = usedComponents || [];
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toFixed(2)}`;
+  };
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Repair Report #${repair.id}</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          text-align: center;
+          border-bottom: 2px solid #2563eb;
+          padding-bottom: 20px;
+          margin-bottom: 30px;
+        }
+        .header h1 {
+          color: #1e40af;
+          margin: 0;
+          font-size: 28px;
+        }
+        .header h2 {
+          color: #64748b;
+          margin: 5px 0;
+          font-size: 18px;
+          font-weight: normal;
+        }
+        .section {
+          margin-bottom: 30px;
+          background: #f8fafc;
+          padding: 20px;
+          border-radius: 8px;
+          border-left: 4px solid #2563eb;
+        }
+        .section h3 {
+          color: #1e40af;
+          margin-top: 0;
+          font-size: 18px;
+        }
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+          margin-top: 15px;
+        }
+        .info-item {
+          background: white;
+          padding: 10px;
+          border-radius: 4px;
+          border: 1px solid #e2e8f0;
+        }
+        .info-label {
+          font-weight: bold;
+          color: #64748b;
+          font-size: 12px;
+          text-transform: uppercase;
+        }
+        .info-value {
+          color: #1e293b;
+          margin-top: 2px;
+        }
+        .status-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: bold;
+          text-transform: uppercase;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-in-progress { background: #dbeafe; color: #1d4ed8; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-cancelled { background: #fee2e2; color: #dc2626; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 15px;
+          background: white;
+        }
+        th, td {
+          padding: 12px;
+          text-align: left;
+          border: 1px solid #e2e8f0;
+        }
+        th {
+          background: #f1f5f9;
+          font-weight: bold;
+          color: #1e293b;
+        }
+        .progress-updates {
+          margin-top: 20px;
+        }
+        .update-item {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 15px;
+          margin-bottom: 15px;
+        }
+        .update-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+        .update-status {
+          font-weight: bold;
+          color: #1e40af;
+        }
+        .update-date {
+          color: #64748b;
+          font-size: 14px;
+        }
+        .update-notes {
+          color: #374151;
+          line-height: 1.5;
+        }
+        .footer {
+          margin-top: 40px;
+          text-align: center;
+          color: #64748b;
+          font-size: 12px;
+          border-top: 1px solid #e2e8f0;
+          padding-top: 20px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Solar Inverter Repair Report</h1>
+        <h2>Repair #${repair.id}</h2>
+        <p>Generated on ${formatDateTime(new Date().toISOString())}</p>
+      </div>
+
+      <div class="section">
+        <h3>Client Information</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Client Name</div>
+            <div class="info-value">${client?.name || 'N/A'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-value">${client?.email || 'N/A'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Phone</div>
+            <div class="info-value">${client?.phone || 'N/A'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Address</div>
+            <div class="info-value">${client?.address || 'N/A'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Device Information</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Inverter Model</div>
+            <div class="info-value">${repair.inverterModel || inverter?.model || 'N/A'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Serial Number</div>
+            <div class="info-value">${repair.inverterSerialNumber || inverter?.serialNumber || 'N/A'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Warranty Status</div>
+            <div class="info-value">${inverter?.warrantyStatus || 'Unknown'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Installation Date</div>
+            <div class="info-value">${inverter?.installationDate ? formatDateTime(inverter.installationDate) : 'N/A'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Repair Details</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Status</div>
+            <div class="info-value">
+              <span class="status-badge status-${repair.status?.toLowerCase().replace(' ', '-')}">${repair.status || 'N/A'}</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Fault Type</div>
+            <div class="info-value">${faultType?.name || 'Not categorized'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Received Date</div>
+            <div class="info-value">${formatDateTime(repair.receivedDate)}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Estimated Completion</div>
+            <div class="info-value">${repair.estimatedCompletionDate ? formatDateTime(repair.estimatedCompletionDate) : 'N/A'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Technician</div>
+            <div class="info-value">${repair.technicianName || 'N/A'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Labor Hours</div>
+            <div class="info-value">${repair.laborHours || '0'}</div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 15px;">
+          <div class="info-label">Fault Description</div>
+          <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #e2e8f0; margin-top: 5px;">
+            ${repair.faultDescription || 'No description provided'}
+          </div>
+        </div>
+      </div>
+
+      ${repair.statusHistory && repair.statusHistory.length > 0 ? `
+      <div class="section">
+        <h3>Progress Updates</h3>
+        <div class="progress-updates">
+          ${repair.statusHistory.map((update: any) => `
+            <div class="update-item">
+              <div class="update-header">
+                <span class="update-status">${update.status}</span>
+                <span class="update-date">${formatDateTime(update.timestamp)}</span>
+              </div>
+              ${update.note ? `<div class="update-notes">${update.note}</div>` : ''}
+              ${update.photos && update.photos.length > 0 ? `
+                <div style="margin-top: 10px;">
+                  <div class="info-label">Photos Attached: ${update.photos.length}</div>
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+
+      ${components && components.length > 0 ? `
+      <div class="section">
+        <h3>Components Used</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Part Number</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${components.map((comp: any) => `
+              <tr>
+                <td>${comp.component?.name || `Component #${comp.componentId}`}</td>
+                <td>${comp.component?.partNumber || 'N/A'}</td>
+                <td>${comp.quantity}</td>
+                <td>${formatCurrency(comp.unitPrice)}</td>
+                <td>${formatCurrency(comp.quantity * comp.unitPrice)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 20px; text-align: right;">
+          <div><strong>Parts Cost: ${formatCurrency(repair.totalPartsCost || 0)}</strong></div>
+          <div><strong>Labor Cost: ${formatCurrency((repair.laborHours || 0) * (repair.laborRate || 0))}</strong></div>
+          <div style="font-size: 18px; color: #1e40af;"><strong>Total Cost: ${formatCurrency(repair.totalCost || 0)}</strong></div>
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="footer">
+        <p>Solar Inverter Repair Management System</p>
+        <p>This report was automatically generated on ${formatDateTime(new Date().toISOString())}</p>
+      </div>
+    </body>
+    </html>
+  `;
 }
