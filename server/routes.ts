@@ -991,7 +991,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const client = repair.clientId ? await storage.getClient(repair.clientId) : null;
       const inverter = repair.inverterId ? await storage.getInverter(repair.inverterId) : null;
       const faultType = repair.faultTypeId ? await storage.getFaultType(repair.faultTypeId) : null;
-      const usedComponents = await storage.getRepairComponents(repairId);
+      const usedComponentsRaw = await storage.getUsedComponentsByRepair(repairId);
+      
+      // Get component details for each used component
+      const usedComponents = await Promise.all(
+        usedComponentsRaw.map(async (uc) => {
+          const component = await storage.getComponent(uc.componentId);
+          return {
+            ...uc,
+            componentName: component?.name || `Component #${uc.componentId}`,
+            partNumber: component?.partNumber || 'N/A'
+          };
+        })
+      );
       
       // Generate HTML content for PDF
       const htmlContent = generateRepairReportHTML(
@@ -1397,8 +1409,8 @@ function generateRepairReportHTML(
           <tbody>
             ${components.map((comp: any) => `
               <tr>
-                <td>${comp.component?.name || `Component #${comp.componentId}`}</td>
-                <td>${comp.component?.partNumber || 'N/A'}</td>
+                <td>${comp.componentName || `Component #${comp.componentId}`}</td>
+                <td>${comp.partNumber || 'N/A'}</td>
                 <td>${comp.quantity}</td>
                 <td>${formatCurrency(comp.unitPrice)}</td>
                 <td>${formatCurrency(comp.quantity * comp.unitPrice)}</td>
