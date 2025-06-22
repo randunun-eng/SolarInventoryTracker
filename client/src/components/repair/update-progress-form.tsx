@@ -57,7 +57,7 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
   const form = useForm<UpdateProgressFormValues>({
     resolver: zodResolver(updateProgressSchema),
     defaultValues: {
-      status: (repair as any)?.status || "In Progress",
+      status: "In Progress",
       notes: "",
       timestamp: new Date(),
       photos: [],
@@ -67,10 +67,11 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
   // Update form values when repair data loads
   useEffect(() => {
     if (repair && Object.keys(repair).length > 0) {
+      const currentTime = new Date();
       form.reset({
         status: (repair as any).status || "In Progress",
         notes: "",
-        timestamp: new Date(),
+        timestamp: currentTime,
         photos: [],
       });
     }
@@ -284,11 +285,17 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
               <FormControl>
                 <Input
                   type="datetime-local"
-                  value={field.value instanceof Date ? 
-                    field.value.toISOString().slice(0, 16) : 
-                    new Date().toISOString().slice(0, 16)
+                  value={
+                    field.value instanceof Date && !isNaN(field.value.getTime()) ? 
+                      field.value.toISOString().slice(0, 16) : 
+                      new Date().toISOString().slice(0, 16)
                   }
-                  onChange={(e) => field.onChange(new Date(e.target.value))}
+                  onChange={(e) => {
+                    const dateValue = e.target.value ? new Date(e.target.value) : new Date();
+                    if (!isNaN(dateValue.getTime())) {
+                      field.onChange(dateValue);
+                    }
+                  }}
                 />
               </FormControl>
               <FormMessage />
