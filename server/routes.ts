@@ -1014,35 +1014,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         usedComponents
       );
       
-      // Generate PDF using Puppeteer
-      const puppeteer = require('puppeteer');
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      
-      const page = await browser.newPage();
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-      
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '15mm',
-          bottom: '20mm',
-          left: '15mm'
-        }
-      });
-      
-      await browser.close();
-      
-      // Set headers for PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="repair-report-${repairId}.pdf"`);
-      res.setHeader('Content-Length', pdfBuffer.length);
-      
-      res.send(pdfBuffer);
+      // Return HTML content for client-side PDF generation
+      res.setHeader('Content-Type', 'text/html');
+      res.send(htmlContent);
       
     } catch (error) {
       console.error("Error generating repair report:", error);
@@ -1156,6 +1130,14 @@ function generateRepairReportHTML(
       <meta charset="utf-8">
       <title>Repair Report #${repair.id}</title>
       <style>
+        @media print {
+          body { margin: 0; }
+          .no-print { display: none; }
+        }
+        @page {
+          size: A4;
+          margin: 1in;
+        }
         body {
           font-family: Arial, sans-serif;
           line-height: 1.6;
@@ -1430,6 +1412,15 @@ function generateRepairReportHTML(
       <div class="footer">
         <p>Solar Inverter Repair Management System</p>
         <p>This report was automatically generated on ${formatDateTime(new Date().toISOString())}</p>
+      </div>
+      
+      <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button onclick="window.print()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          Print/Save as PDF
+        </button>
+        <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 10px;">
+          Close
+        </button>
       </div>
     </body>
     </html>

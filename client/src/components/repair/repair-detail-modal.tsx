@@ -150,18 +150,34 @@ export function RepairDetailModal({
     try {
       setIsGeneratingPDF(true);
       
-      // Generate the PDF with all available data
-      await generateRepairReport(
-        repair,
-        client,
-        inverter,
-        usedComponents || [],
-        componentDetails?.data || []
-      );
+      // Fetch HTML template from server
+      const response = await fetch(`/api/repairs/${repairId}/report`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch report template');
+      }
+      
+      const htmlContent = await response.text();
+      
+      // Create a new window/tab for printing
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('Failed to open print window');
+      }
+      
+      // Write the HTML content to the new window
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      // Wait for content to load, then trigger print dialog
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      };
       
       toast({
         title: "Success",
-        description: "PDF report generated and downloaded successfully",
+        description: "PDF report opened in new tab. Use your browser's print function to save as PDF.",
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -468,14 +484,15 @@ export function RepairDetailModal({
                 <div className="flex justify-end space-x-3">
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      if (repairId) {
-                        window.open(`/api/repairs/${repairId}/report`, '_blank');
-                      }
-                    }}
+                    onClick={handleGeneratePDF}
+                    disabled={isGeneratingPDF}
                   >
-                    <Download className="mr-2 h-4 w-4 text-blue-600" />
-                    Download PDF Report
+                    {isGeneratingPDF ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4 text-blue-600" />
+                    )}
+                    {isGeneratingPDF ? 'Generating...' : 'Download PDF Report'}
                   </Button>
                   <Button 
                     variant="outline"
