@@ -228,6 +228,117 @@ export const generateRepairReport = async (
   
   yPos += 25;
   
+  // Progress Updates Section
+  if (repair.statusHistory && repair.statusHistory.length > 0) {
+    doc.setFontSize(12);
+    doc.setTextColor(44, 62, 80);
+    doc.text('Progress Updates', 14, yPos + 10);
+    yPos += 20;
+    
+    for (const update of repair.statusHistory) {
+      // Check if we need a new page
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      
+      // Status update header
+      doc.text(`Status: ${update.status}`, 14, yPos);
+      doc.text(`Date: ${formatDateTime(new Date(update.timestamp))}`, 14, yPos + 5);
+      
+      if (update.note) {
+        // Split long notes into multiple lines
+        const noteLines = doc.splitTextToSize(`Notes: ${update.note}`, 180);
+        doc.text(noteLines, 14, yPos + 10);
+        yPos += 5 + (noteLines.length * 5);
+      }
+      
+      yPos += 15;
+      
+      // Add photos if present
+      if (update.photos && update.photos.length > 0) {
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Photos:', 14, yPos);
+        yPos += 10;
+        
+        let photoX = 14;
+        let photosInRow = 0;
+        
+        for (const photo of update.photos) {
+          try {
+            // Check if we need a new page for photos
+            if (yPos > 220) {
+              doc.addPage();
+              yPos = 20;
+              photoX = 14;
+              photosInRow = 0;
+            }
+            
+            // Try to load and add the image
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            await new Promise((resolve, reject) => {
+              img.onload = () => {
+                try {
+                  // Calculate dimensions to fit in PDF
+                  const maxWidth = 45;
+                  const maxHeight = 35;
+                  let width = maxWidth;
+                  let height = (img.height * maxWidth) / img.width;
+                  
+                  if (height > maxHeight) {
+                    height = maxHeight;
+                    width = (img.width * maxHeight) / img.height;
+                  }
+                  
+                  // Add image to PDF
+                  doc.addImage(img, 'JPEG', photoX, yPos, width, height);
+                  
+                  // Move to next position
+                  photoX += width + 5;
+                  photosInRow++;
+                  
+                  // Move to next row if needed
+                  if (photosInRow >= 3) {
+                    yPos += height + 10;
+                    photoX = 14;
+                    photosInRow = 0;
+                  }
+                  
+                  resolve(null);
+                } catch (error) {
+                  console.error('Error adding image to PDF:', error);
+                  resolve(null);
+                }
+              };
+              img.onerror = () => resolve(null);
+              img.src = photo;
+            });
+          } catch (error) {
+            console.error('Error loading photo:', error);
+          }
+        }
+        
+        // Adjust yPos after photos
+        if (photosInRow > 0) {
+          yPos += 40;
+        }
+      }
+      
+      yPos += 10;
+      
+      // Add separator line
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, yPos, 196, yPos);
+      yPos += 10;
+    }
+  }
+  
   // Used Components Table
   if (usedComponents && usedComponents.length > 0) {
     // Check if we need a new page
