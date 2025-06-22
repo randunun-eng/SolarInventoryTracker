@@ -186,7 +186,9 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
       // Create a status history entry
       const newStatusEntry = {
         status: data.status,
-        timestamp: data.timestamp ? data.timestamp.toISOString() : new Date().toISOString(),
+        timestamp: data.timestamp && data.timestamp instanceof Date && !isNaN(data.timestamp.getTime()) 
+          ? data.timestamp.toISOString() 
+          : new Date().toISOString(),
         note: data.notes,
         photos: photos,
         userId: null,
@@ -279,28 +281,44 @@ export function UpdateProgressForm({ repairId, onSuccess }: UpdateProgressFormPr
         <FormField
           control={form.control}
           name="timestamp"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Update Date & Time</FormLabel>
-              <FormControl>
-                <Input
-                  type="datetime-local"
-                  value={
-                    field.value instanceof Date && !isNaN(field.value.getTime()) ? 
-                      field.value.toISOString().slice(0, 16) : 
-                      new Date().toISOString().slice(0, 16)
-                  }
-                  onChange={(e) => {
-                    const dateValue = e.target.value ? new Date(e.target.value) : new Date();
-                    if (!isNaN(dateValue.getTime())) {
-                      field.onChange(dateValue);
-                    }
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            // Format date for datetime-local input (YYYY-MM-DDTHH:MM)
+            const formatDateTimeLocal = (date: Date | null | undefined): string => {
+              if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+                date = new Date();
+              }
+              
+              // Get local date and time components
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const hours = String(date.getHours()).padStart(2, '0');
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              
+              return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+
+            return (
+              <FormItem>
+                <FormLabel>Update Date & Time</FormLabel>
+                <FormControl>
+                  <Input
+                    type="datetime-local"
+                    value={formatDateTimeLocal(field.value)}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const dateValue = new Date(e.target.value);
+                        if (!isNaN(dateValue.getTime())) {
+                          field.onChange(dateValue);
+                        }
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <FormField
