@@ -9,12 +9,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatCurrency, getStatusColor } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, FileText, Edit, Check, Clock, Plus } from "lucide-react";
+import { Loader2, FileText, Edit, Check, Clock, Plus, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { generateRepairReport } from "@/lib/reportGenerator";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,7 @@ export function RepairDetailModal({
   const [selectedComponentId, setSelectedComponentId] = useState<string>("");
   const [quantity, setQuantity] = useState<string>("1");
   const [unitPrice, setUnitPrice] = useState<string>("0");
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Fetch repair data
   const { data: repair, isLoading: isLoadingRepair } = useQuery({
@@ -133,6 +135,44 @@ export function RepairDetailModal({
       quantity: parseInt(quantity),
       unitPrice: parseFloat(unitPrice),
     });
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!repair || !repairId) {
+      toast({
+        title: "Error",
+        description: "Repair data not available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingPDF(true);
+      
+      // Generate the PDF with all available data
+      await generateRepairReport(
+        repair,
+        client,
+        inverter,
+        usedComponents || [],
+        componentDetails?.data || []
+      );
+      
+      toast({
+        title: "Success",
+        description: "PDF report generated and downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -428,14 +468,15 @@ export function RepairDetailModal({
                 <div className="flex justify-end space-x-3">
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      if (repairId) {
-                        window.open(`/api/repairs/${repairId}/report`, '_blank');
-                      }
-                    }}
+                    onClick={handleGeneratePDF}
+                    disabled={isGeneratingPDF}
                   >
-                    <FileText className="mr-2 h-4 w-4 text-red-500" />
-                    Generate Report
+                    {isGeneratingPDF ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4 text-blue-600" />
+                    )}
+                    {isGeneratingPDF ? 'Generating...' : 'Download PDF Report'}
                   </Button>
                   <Button 
                     variant="outline"

@@ -163,7 +163,7 @@ export const generateInventoryReport = (
 };
 
 // Generate repair report for a specific repair
-export const generateRepairReport = (
+export const generateRepairReport = async (
   repair: any,
   client: any,
   inverter: any,
@@ -219,20 +219,29 @@ export const generateRepairReport = (
     doc.text(`Completed On: ${formatDateTime(new Date(repair.completionDate))}`, 14, 155);
   }
   
-  const yPos = repair.completionDate ? 160 : 150;
+  let yPos = repair.completionDate ? 160 : 150;
   
   doc.text(`Fault Description: ${repair.faultDescription || 'N/A'}`, 14, yPos + 5);
   doc.text(`Technician: ${repair.technicianName || 'N/A'}`, 14, yPos + 10);
   doc.text(`Labor Hours: ${repair.laborHours || '0'}`, 14, yPos + 15);
   doc.text(`Labor Rate: $${repair.laborRate || '0'}/hour`, 14, yPos + 20);
   
+  yPos += 25;
+  
   // Used Components Table
   if (usedComponents && usedComponents.length > 0) {
+    // Check if we need a new page
+    if (yPos > 200) {
+      doc.addPage();
+      yPos = 20;
+    }
+    
     doc.setFontSize(12);
-    doc.text('Components Used', 14, yPos + 30);
+    doc.setTextColor(44, 62, 80);
+    doc.text('Components Used', 14, yPos);
     
     doc.autoTable({
-      startY: yPos + 40,
+      startY: yPos + 10,
       head: [['Component', 'Quantity', 'Unit Price', 'Total']],
       body: usedComponents.map(uc => {
         const component = components.find(c => c.id === uc.componentId);
