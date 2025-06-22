@@ -146,10 +146,19 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
         completionDate: repair.completionDate 
           ? new Date(repair.completionDate) 
           : null,
+        estimatedCompletionDate: repair.estimatedCompletionDate 
+          ? new Date(repair.estimatedCompletionDate) 
+          : null,
       });
-      // Set photos from the repair data
-      if (repair.repairPhotos && repair.repairPhotos.length > 0) {
-        setPhotos(repair.repairPhotos);
+      // Set photos from the repair data - check multiple photo fields
+      const allPhotos = [
+        ...(repair.repairPhotos || []),
+        ...(repair.beforePhotos || []),
+        ...(repair.afterPhotos || [])
+      ].filter(photo => photo && photo.trim() !== '');
+      
+      if (allPhotos.length > 0) {
+        setPhotos(allPhotos);
       }
       setSelectedClientId(repair.clientId);
     }
@@ -348,6 +357,7 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
       totalCost,
       technicianName: "",
       technicianNotes: "",
+      repairPhotos: photos, // Include the photos in the submission
     });
   };
 
@@ -558,8 +568,47 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                 )}
               />
             </div>
+
+            {/* Second row: Completion Date and Estimated Completion Date */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <FormField
+                control={form.control}
+                name="completionDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Completion Date</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 10) : ''}
+                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="estimatedCompletionDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estimated Completion Date</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 10) : ''}
+                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
-            {/* Second row: Priority and Fault Type */}
+            {/* Third row: Priority and Fault Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
                 control={form.control}
@@ -657,7 +706,10 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
               name="repairPhotos"
               render={({ field }) => (
                 <FormItem className="mt-6">
-                  <FormLabel>Pictures (Maximum 3)</FormLabel>
+                  <FormLabel>Repair Photos (Maximum 3)</FormLabel>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    Upload photos of the repair process, damage, or completed work
+                  </div>
                   <FormControl>
                     <div className="grid grid-cols-1 gap-4">
                       {/* Only show upload area if less than 3 photos */}
@@ -670,28 +722,16 @@ export function RepairForm({ repairId, onSuccess }: RepairFormProps) {
                                 Drag & drop photos here, or click to upload
                               </p>
                               <div className="flex flex-wrap justify-center gap-2">
-                                <label className="cursor-pointer">
-                                  <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    size="sm"
-                                    disabled={isUploading}
-                                    asChild
-                                  >
-                                    <span>
-                                      <Camera className="h-4 w-4 mr-2" />
-                                      Take Photo
-                                    </span>
-                                  </Button>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    className="hidden"
-                                    onChange={handleFileUpload}
-                                    disabled={isUploading}
-                                  />
-                                </label>
+                                <Button 
+                                  type="button" 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={openCamera}
+                                  disabled={isUploading}
+                                >
+                                  <Camera className="h-4 w-4 mr-2" />
+                                  Take Photo
+                                </Button>
                                 
                                 <label className="cursor-pointer">
                                   <Button 
