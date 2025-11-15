@@ -10,6 +10,9 @@ import path from "path";
 import fs from "fs";
 import express from "express";
 import crypto from "crypto";
+import passport from "./auth";
+import { requireAuth, requireRole } from "./auth";
+import bcrypt from "bcrypt";
 
 // Helper function to generate unique tracking token
 function generateTrackingToken(): string {
@@ -115,6 +118,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Authentication endpoints (public - no auth required)
+  app.post("/api/auth/login", (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return res.status(500).json({ error: "Authentication error" });
+      }
+      if (!user) {
+        return res.status(401).json({ error: info?.message || "Invalid credentials" });
+      }
+      
+      req.logIn(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "Login failed" });
+        }
+        res.json({ user });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/auth/me", (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    res.json({ user: req.user });
+  });
+
   // Handle datasheet uploads specifically
   app.post("/api/upload/datasheet", upload.single('datasheet'), async (req: Request, res: Response) => {
     try {
