@@ -10,7 +10,7 @@ import { aiRoutes } from './routes/ai';
 export interface Env {
   SESSIONS: KVNamespace;
   UPLOADS: R2Bucket;
-  DATABASE_URL: string;
+  DB: D1Database; // Cloudflare D1 database
   SESSION_SECRET: string;
   OPENAI_API_KEY: string;
   OPENAI_API_BASE: string;

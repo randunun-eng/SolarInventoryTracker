@@ -15,6 +15,12 @@ binding = "UPLOADS"
 bucket_name = "solar-inventory-uploads"
 preview_bucket_name = "solar-inventory-uploads-preview"
 
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "solar-inventory-tracker-db"
+database_id = "placeholder_database_id"
+
 # Environment variables (set these in Cloudflare dashboard or using wrangler secret)
 [vars]
 NODE_ENV = "production"

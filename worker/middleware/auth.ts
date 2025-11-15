@@ -81,12 +81,9 @@ export function requireRole(roles: string[]) {
  * Helper function to get user by ID from database
  */
 async function getUserById(c: any, userId: number): Promise<User | null> {
-  const { getDb } = await import('../lib/db');
-  const { users } = await import('@shared/schema');
-  const { eq } = await import('drizzle-orm');
+  const result = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
+    .bind(userId)
+    .first();
 
-  const db = getDb(c.env.DATABASE_URL);
-  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-
-  return result[0] || null;
+  return result as User | null;
 }

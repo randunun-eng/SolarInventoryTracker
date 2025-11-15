@@ -1,10 +1,8 @@
 import { Hono } from 'hono';
 import type { Env } from '../index';
-import { getDb } from '../lib/db';
-import { users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs'; // Using bcryptjs for browser compatibility
 import { updateSession } from '../middleware/session';
+import type { User } from '@shared/schema';
 
 export const authRoutes = new Hono<{ Bindings: Env }>();
 
@@ -20,17 +18,10 @@ authRoutes.post('/login', async (c) => {
       return c.json({ error: 'Username and password required' }, 400);
     }
 
-    // Get database connection
-    const db = getDb(c.env.DATABASE_URL);
-
     // Find user by username
-    const userResults = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, username))
-      .limit(1);
-
-    const user = userResults[0];
+    const user = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?')
+      .bind(username)
+      .first() as User | null;
 
     if (!user) {
       return c.json({ error: 'Invalid username or password' }, 401);
@@ -87,17 +78,10 @@ authRoutes.get('/me', async (c) => {
       return c.json({ error: 'Not authenticated' }, 401);
     }
 
-    // Get database connection
-    const db = getDb(c.env.DATABASE_URL);
-
     // Find user by ID
-    const userResults = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1);
-
-    const user = userResults[0];
+    const user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
+      .bind(session.userId)
+      .first() as User | null;
 
     if (!user) {
       return c.json({ error: 'User not found' }, 401);
@@ -148,17 +132,10 @@ authRoutes.post('/verify-admin', async (c) => {
       return c.json({ error: 'Password required' }, 400);
     }
 
-    // Get database connection
-    const db = getDb(c.env.DATABASE_URL);
-
     // Find admin user
-    const adminResults = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, 'admin'))
-      .limit(1);
-
-    const admin = adminResults[0];
+    const admin = await c.env.DB.prepare('SELECT * FROM users WHERE username = ?')
+      .bind('admin')
+      .first() as User | null;
 
     if (!admin) {
       return c.json({ error: 'Admin user not found' }, 500);

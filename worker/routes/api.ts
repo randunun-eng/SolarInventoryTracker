@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../index';
-import { WorkerStorage } from '../lib/storage';
+import { D1Storage } from '../lib/d1-storage';
 import { requireAuth, requireRole } from '../middleware/auth';
 import {
   insertCategorySchema,
@@ -21,8 +21,8 @@ import bcrypt from 'bcryptjs';
 export const apiRoutes = new Hono<{ Bindings: Env }>();
 
 // Helper to get storage instance
-function getStorage(c: any): WorkerStorage {
-  return new WorkerStorage(c.env.DATABASE_URL);
+function getStorage(c: any): D1Storage {
+  return new D1Storage(c.env.DB);
 }
 
 // Helper function to generate unique tracking token using Web Crypto API
