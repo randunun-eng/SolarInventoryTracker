@@ -16,9 +16,3 @@ export const db = drizzle(sql, { schema });
 db.execute = async (query: string, params: any[] = []) => {
   return await sql(query);
 };
-
-// Add execute method for raw SQL queries
-// @ts-ignore - Adding execute method to db object
-db.execute = async (query: string, params: any[] = []) => {
-  return await pool.query(query, params);
-};
