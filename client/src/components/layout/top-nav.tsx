@@ -8,12 +8,46 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
+import { useLocation } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface TopNavProps {
   onMenuToggle: () => void;
 }
 
 export default function TopNav({ onMenuToggle }: TopNavProps) {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest("POST", "/api/auth/logout", {});
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      setLocation("/login");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Get initials from user name
+  const getInitials = () => {
+    if (!user) return "U";
+    if (user.name) {
+      return user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    return user.username.slice(0, 2).toUpperCase();
+  };
   return (
     <header className="bg-white border-b border-slate-200 flex items-center justify-between p-4">
       {/* Mobile menu toggle */}
@@ -67,22 +101,23 @@ export default function TopNav({ onMenuToggle }: TopNavProps) {
         <div className="flex items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="p-0 hover:bg-transparent">
+              <Button variant="ghost" className="p-0 hover:bg-transparent" data-testid="button-user-menu">
                 <div className="flex items-center">
                   <Avatar className="h-8 w-8 mr-2 bg-primary-600">
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
                   <div className="hidden md:block text-left">
-                    <div className="text-sm font-medium text-slate-700">John Doe</div>
-                    <div className="text-xs text-slate-500">Admin</div>
+                    <div className="text-sm font-medium text-slate-700">{user?.name || user?.username || "User"}</div>
+                    <div className="text-xs text-slate-500">{user?.role || "User"}</div>
                   </div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLocation("/settings")}>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
