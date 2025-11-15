@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatCurrency, getStatusColor } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, FileText, Edit, Check, Clock, Plus, Download } from "lucide-react";
+import { Loader2, FileText, Edit, Check, Clock, Plus, Download, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useState } from "react";
@@ -482,6 +482,23 @@ export function RepairDetailModal({
                 <Separator className="my-4" />
                 
                 <div className="flex justify-end space-x-3">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (repair.trackingToken) {
+                        const trackingUrl = `${window.location.origin}/track/${repair.trackingToken}`;
+                        navigator.clipboard.writeText(trackingUrl);
+                        toast({
+                          title: "Tracking Link Copied",
+                          description: "Share this link with your customer to track their repair status.",
+                        });
+                      }
+                    }}
+                    disabled={!repair.trackingToken}
+                  >
+                    <Link2 className="mr-2 h-4 w-4" />
+                    Copy Tracking Link
+                  </Button>
                   <Button 
                     variant="outline"
                     onClick={handleGeneratePDF}
