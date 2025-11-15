@@ -1,6 +1,5 @@
 import { createMiddleware } from 'hono/factory';
 import type { Env } from '../index';
-import { v4 as uuidv4 } from 'uuid';
 
 // Session data interface
 export interface SessionData {
@@ -63,17 +62,17 @@ export function createSessionMiddleware() {
         if (session.expiresAt < Date.now()) {
           // Session expired, create new one
           await SESSIONS.delete(`session:${sessionId}`);
-          sessionId = uuidv4();
+          sessionId = crypto.randomUUID();
           session = createNewSession(sessionId);
         }
       } else {
         // Session not found, create new one
-        sessionId = uuidv4();
+        sessionId = crypto.randomUUID();
         session = createNewSession(sessionId);
       }
     } else {
       // No session cookie, create new session
-      sessionId = uuidv4();
+      sessionId = crypto.randomUUID();
       session = createNewSession(sessionId);
     }
 

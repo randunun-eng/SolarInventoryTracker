@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import type { Env } from '../index';
 import { WorkerStorage } from '../lib/storage';
 import { requireAuth, requireRole } from '../middleware/auth';
-import crypto from 'crypto';
 import {
   insertCategorySchema,
   insertSupplierSchema,
@@ -26,9 +25,11 @@ function getStorage(c: any): WorkerStorage {
   return new WorkerStorage(c.env.DATABASE_URL);
 }
 
-// Helper function to generate unique tracking token
+// Helper function to generate unique tracking token using Web Crypto API
 function generateTrackingToken(): string {
-  return crypto.randomBytes(8).toString('hex');
+  const array = new Uint8Array(8);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 // ============================================================================
