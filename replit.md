@@ -96,18 +96,40 @@ The application uses Drizzle ORM for database management. Key tables include:
 - Image optimization: 120px screen view, 80px print view with object-fit: contain
 - Currency symbols are mapped in both settings.tsx and component-form.tsx
 - Settings are stored as JSONB in the database for flexibility
-- **Password Elevation System**:
-  - Backend: requireRole middleware checks both user.role AND session.adminElevated
-  - Backend: Admin password verified against 'admin' user account via bcrypt
-  - Backend: Elevation expires after 1 hour (checked on each request)
-  - Backend: Elevation cleared on logout or expiration
-  - Frontend: All users see complete sidebar (no role filtering)
-  - Frontend: ProtectedRoute shows AdminPasswordDialog for restricted pages
-  - Frontend: AdminElevationProvider manages elevation state via React Context
-  - Frontend: Successful password verification sets isElevated = true
-  - Admin password: Same as 'admin' user password (default: 'admin')
-  - Security: Elevation is session-based, not persisted to database
-  - Login redirect: Admin → /dashboard, Technician → /repairs, Unknown → /repairs (safe fallback)
+- **Password Elevation System** (PRODUCTION-READY):
+  - **Backend Implementation**:
+    - `requireRole` middleware checks both user.role AND session.adminElevated with 1-hour TTL
+    - `/api/auth/verify-admin` endpoint verifies admin password via bcrypt, sets session elevation
+    - `/api/auth/me` returns elevation status, validates expiry, clears expired flags
+    - Logout clears adminElevated and adminElevatedAt session flags
+    - Admin password verified against 'admin' user account (default: 'admin')
+    - Session-based elevation (server-side enforcement, not persisted to database)
+  - **Frontend Implementation**:
+    - All users see complete sidebar navigation (no role-based filtering)
+    - `ProtectedRoute` component implements complete access gating:
+      - Blocks component rendering until `hasAccess = true` (prevents 403 errors)
+      - Uses `useRef` for verification tracking (synchronous, no stale closures)
+      - Controlled dialog via `showPasswordDialog` state
+      - Only redirects to /repairs on cancel, NOT on successful verification
+      - Component mounts ONLY after elevation granted
+    - `AdminPasswordDialog` component for password entry with validation
+    - `AdminElevationProvider` manages global elevation state via React Context
+    - Frontend-backend state synchronization via `/api/auth/me`
+  - **Security Features**:
+    - 1-hour automatic expiry (checked on each request)
+    - Elevation cleared on logout or timeout
+    - Component-level access gating prevents unauthorized data access
+    - No race conditions or stale state issues
+  - **User Experience**:
+    - Success path: Dialog → Password → Verify → Stay on target page
+    - Cancel path: Dialog → Cancel → Redirect to /repairs
+    - Elevation persists across navigation for 1 hour
+    - Login redirect: Admin → /dashboard, Technician → /repairs
+  - **Critical Bug Fixes Applied**:
+    - Fixed render-time setState (moved to useEffect)
+    - Fixed component mounting before elevation (hasAccess gating)
+    - Fixed stale state closure bug (replaced useState with useRef)
+    - Fixed intermittent redirect after success (ref-based tracking eliminates race)
 - **Authentication System**:
   - Session-based auth with express-session + Passport.js LocalStrategy
   - Passwords hashed using bcrypt (10 salt rounds)
