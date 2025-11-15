@@ -13,6 +13,7 @@ import Invoices from "@/pages/invoices";
 import Settings from "@/pages/settings";
 import RepairStatus from "@/pages/repair-status";
 import Users from "@/pages/users";
+import TrackRepair from "@/pages/track-repair";
 import { ChatBot } from "@/components/ai/chat-bot";
 import { VoiceTest } from "@/components/ai/voice-test";
 
@@ -39,10 +40,18 @@ function Router() {
 function App() {
   return (
     <TooltipProvider>
-      <Layout>
-        <Router />
-        <ChatBot />
-      </Layout>
+      <Switch>
+        {/* Public tracking page - no layout/auth required */}
+        <Route path="/track/:token" component={TrackRepair} />
+        
+        {/* Protected routes with layout */}
+        <Route>
+          <Layout>
+            <Router />
+            <ChatBot />
+          </Layout>
+        </Route>
+      </Switch>
     </TooltipProvider>
   );
 }
