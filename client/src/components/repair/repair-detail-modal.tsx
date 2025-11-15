@@ -16,6 +16,7 @@ import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { generateRepairReport } from "@/lib/reportGenerator";
+import { useAuth } from "@/lib/auth";
 import {
   Select,
   SelectContent,
@@ -41,6 +42,8 @@ export function RepairDetailModal({
 }: RepairDetailModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
   const [showAddComponent, setShowAddComponent] = useState(false);
   const [selectedComponentId, setSelectedComponentId] = useState<string>("");
   const [quantity, setQuantity] = useState<string>("1");
@@ -511,13 +514,16 @@ export function RepairDetailModal({
                     )}
                     {isGeneratingPDF ? 'Generating...' : 'Download PDF Report'}
                   </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => repairId && onEdit(repairId)}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Repair
-                  </Button>
+                  {isAdmin && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => repairId && onEdit(repairId)}
+                      data-testid="button-edit-repair-modal"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Repair
+                    </Button>
+                  )}
                   <Button 
                     variant="outline"
                     onClick={() => {

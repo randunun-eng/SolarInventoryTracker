@@ -18,6 +18,7 @@ import {
   Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 
 interface SidebarSectionProps {
   title: string;
@@ -69,6 +70,9 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
+  const isTechnician = user?.role === 'Technician';
 
   const toggleMobileMenu = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -91,27 +95,37 @@ export default function Layout({ children }: LayoutProps) {
           <p className="text-sm text-slate-400">Inventory & Repair Management</p>
         </div>
         <nav className="p-2">
-          <div className="mb-1">
-            <SidebarLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-          </div>
+          {/* Technicians only see Repairs */}
+          {isTechnician ? (
+            <div className="mb-1">
+              <SidebarLink href="/repairs" icon={Wrench} label="Repair Logs" />
+            </div>
+          ) : (
+            <>
+              {/* Admin sees everything */}
+              <div className="mb-1">
+                <SidebarLink href="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+              </div>
 
-          <SidebarSection title="INVENTORY">
-            <SidebarLink href="/components" icon={Cpu} label="Components" />
-            <SidebarLink href="/categories" icon={Tags} label="Categories" />
-            <SidebarLink href="/suppliers" icon={Truck} label="Suppliers" />
-            <SidebarLink href="/stockalerts" icon={AlertTriangle} label="Stock Alerts" />
-          </SidebarSection>
+              <SidebarSection title="INVENTORY">
+                <SidebarLink href="/components" icon={Cpu} label="Components" />
+                <SidebarLink href="/categories" icon={Tags} label="Categories" />
+                <SidebarLink href="/suppliers" icon={Truck} label="Suppliers" />
+                <SidebarLink href="/stockalerts" icon={AlertTriangle} label="Stock Alerts" />
+              </SidebarSection>
 
-          <SidebarSection title="REPAIR MANAGEMENT">
-            <SidebarLink href="/clients" icon={Users} label="Clients" />
-            <SidebarLink href="/repairs" icon={Wrench} label="Repair Logs" />
-            <SidebarLink href="/invoices" icon={FileText} label="Invoices" />
-          </SidebarSection>
+              <SidebarSection title="REPAIR MANAGEMENT">
+                <SidebarLink href="/clients" icon={Users} label="Clients" />
+                <SidebarLink href="/repairs" icon={Wrench} label="Repair Logs" />
+                <SidebarLink href="/invoices" icon={FileText} label="Invoices" />
+              </SidebarSection>
 
-          <SidebarSection title="SETTINGS">
-            <SidebarLink href="/settings" icon={Settings} label="General" />
-            <SidebarLink href="/users" icon={UserCog} label="Users" />
-          </SidebarSection>
+              <SidebarSection title="SETTINGS">
+                <SidebarLink href="/settings" icon={Settings} label="General" />
+                <SidebarLink href="/users" icon={UserCog} label="Users" />
+              </SidebarSection>
+            </>
+          )}
         </nav>
       </aside>
 

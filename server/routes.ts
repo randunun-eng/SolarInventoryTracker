@@ -312,13 +312,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Categories
-  app.get("/api/categories", async (req: Request, res: Response) => {
+  // Categories (Read: All authenticated, Write: Admin only)
+  app.get("/api/categories", requireAuth, async (req: Request, res: Response) => {
     const categories = await storage.getCategories();
     res.json(categories);
   });
   
-  app.get("/api/categories/:id", async (req: Request, res: Response) => {
+  app.get("/api/categories/:id", requireAuth, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const category = await storage.getCategory(id);
     
@@ -329,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(category);
   });
   
-  app.post("/api/categories", async (req: Request, res: Response) => {
+  app.post("/api/categories", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const data = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory(data);
@@ -339,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/categories/:id", async (req: Request, res: Response) => {
+  app.put("/api/categories/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const data = insertCategorySchema.parse(req.body);
@@ -355,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/categories/:id", async (req: Request, res: Response) => {
+  app.delete("/api/categories/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -378,13 +378,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Suppliers
-  app.get("/api/suppliers", async (req: Request, res: Response) => {
+  // Suppliers (Read: All authenticated, Write: Admin only)
+  app.get("/api/suppliers", requireAuth, async (req: Request, res: Response) => {
     const suppliers = await storage.getSuppliers();
     res.json(suppliers);
   });
   
-  app.get("/api/suppliers/:id", async (req: Request, res: Response) => {
+  app.get("/api/suppliers/:id", requireAuth, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const supplier = await storage.getSupplier(id);
     
@@ -395,7 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(supplier);
   });
   
-  app.post("/api/suppliers", async (req: Request, res: Response) => {
+  app.post("/api/suppliers", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const data = insertSupplierSchema.parse(req.body);
       const supplier = await storage.createSupplier(data);
@@ -405,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/suppliers/:id", async (req: Request, res: Response) => {
+  app.put("/api/suppliers/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const data = insertSupplierSchema.parse(req.body);
@@ -421,13 +421,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Components
-  app.get("/api/components", async (req: Request, res: Response) => {
+  // Components (Read: All authenticated, Write: Admin only)
+  app.get("/api/components", requireAuth, async (req: Request, res: Response) => {
     const components = await storage.getComponents();
     res.json(components);
   });
   
-  app.get("/api/components/low-stock", async (req: Request, res: Response) => {
+  app.get("/api/components/low-stock", requireAuth, async (req: Request, res: Response) => {
     try {
       const components = await storage.getLowStockComponents();
       res.json(components);
@@ -436,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/components/:id", async (req: Request, res: Response) => {
+  app.get("/api/components/:id", requireAuth, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const component = await storage.getComponent(id);
     
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(component);
   });
   
-  app.post("/api/components", async (req: Request, res: Response) => {
+  app.post("/api/components", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       // Process the form data to ensure it has all required fields with defaults
       const formData = {
@@ -476,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/components/:id", async (req: Request, res: Response) => {
+  app.put("/api/components/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const data = insertComponentSchema.parse(req.body);
@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch("/api/components/:id/stock", async (req: Request, res: Response) => {
+  app.patch("/api/components/:id/stock", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const schema = z.object({ quantity: z.number().int() });
@@ -510,7 +510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch("/api/components/:id/min-stock", async (req: Request, res: Response) => {
+  app.patch("/api/components/:id/min-stock", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const schema = z.object({ minimumStock: z.number().int().min(0) });
@@ -551,13 +551,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Clients
-  app.get("/api/clients", async (req: Request, res: Response) => {
+  // Clients (Read: All authenticated, Write: Admin only)
+  app.get("/api/clients", requireAuth, async (req: Request, res: Response) => {
     const clients = await storage.getClients();
     res.json(clients);
   });
   
-  app.get("/api/clients/:id", async (req: Request, res: Response) => {
+  app.get("/api/clients/:id", requireAuth, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const client = await storage.getClient(id);
     
@@ -568,7 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(client);
   });
   
-  app.post("/api/clients", async (req: Request, res: Response) => {
+  app.post("/api/clients", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const data = insertClientSchema.parse(req.body);
       const client = await storage.createClient(data);
@@ -578,7 +578,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/clients/:id", async (req: Request, res: Response) => {
+  app.put("/api/clients/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const data = insertClientSchema.parse(req.body);
@@ -594,19 +594,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Inverters
-  app.get("/api/inverters", async (req: Request, res: Response) => {
+  // Inverters (Read: All authenticated, Write: Admin only)
+  app.get("/api/inverters", requireAuth, async (req: Request, res: Response) => {
     const inverters = await storage.getInverters();
     res.json(inverters);
   });
   
-  app.get("/api/clients/:id/inverters", async (req: Request, res: Response) => {
+  app.get("/api/clients/:id/inverters", requireAuth, async (req: Request, res: Response) => {
     const clientId = parseInt(req.params.id);
     const inverters = await storage.getInvertersByClient(clientId);
     res.json(inverters);
   });
   
-  app.get("/api/inverters/:id", async (req: Request, res: Response) => {
+  app.get("/api/inverters/:id", requireAuth, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const inverter = await storage.getInverter(id);
     
@@ -617,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(inverter);
   });
   
-  app.get("/api/inverters/by-serial/:serialNumber", async (req: Request, res: Response) => {
+  app.get("/api/inverters/by-serial/:serialNumber", requireAuth, async (req: Request, res: Response) => {
     const serialNumber = req.params.serialNumber;
     const inverter = await storage.getInverterBySerialNumber(serialNumber);
     
@@ -628,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(inverter);
   });
   
-  app.post("/api/inverters", async (req: Request, res: Response) => {
+  app.post("/api/inverters", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const data = insertInverterSchema.parse(req.body);
       const inverter = await storage.createInverter(data);
@@ -638,7 +638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/inverters/:id", async (req: Request, res: Response) => {
+  app.put("/api/inverters/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const data = insertInverterSchema.parse(req.body);
@@ -654,13 +654,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Fault Types
-  app.get("/api/fault-types", async (req: Request, res: Response) => {
+  // Fault Types (Read: All authenticated, Write: Admin only)
+  app.get("/api/fault-types", requireAuth, async (req: Request, res: Response) => {
     const faultTypes = await storage.getFaultTypes();
     res.json(faultTypes);
   });
   
-  app.get("/api/fault-types/:id", async (req: Request, res: Response) => {
+  app.get("/api/fault-types/:id", requireAuth, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const faultType = await storage.getFaultType(id);
     
@@ -671,7 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(faultType);
   });
   
-  app.post("/api/fault-types", async (req: Request, res: Response) => {
+  app.post("/api/fault-types", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const data = insertFaultTypeSchema.parse(req.body);
       const faultType = await storage.createFaultType(data);
@@ -682,35 +682,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Repairs
-  app.get("/api/repairs", async (req: Request, res: Response) => {
+  app.get("/api/repairs", requireAuth, async (req: Request, res: Response) => {
     const repairs = await storage.getRepairs();
     res.json(repairs);
   });
   
-  app.get("/api/repairs/active", async (req: Request, res: Response) => {
+  app.get("/api/repairs/active", requireAuth, async (req: Request, res: Response) => {
     const repairs = await storage.getActiveRepairs();
     res.json(repairs);
   });
   
-  app.get("/api/repairs/recent", async (req: Request, res: Response) => {
+  app.get("/api/repairs/recent", requireAuth, async (req: Request, res: Response) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
     const repairs = await storage.getRecentRepairs(limit);
     res.json(repairs);
   });
   
-  app.get("/api/clients/:id/repairs", async (req: Request, res: Response) => {
+  app.get("/api/clients/:id/repairs", requireAuth, async (req: Request, res: Response) => {
     const clientId = parseInt(req.params.id);
     const repairs = await storage.getRepairsByClient(clientId);
     res.json(repairs);
   });
   
-  app.get("/api/inverters/:id/repairs", async (req: Request, res: Response) => {
+  app.get("/api/inverters/:id/repairs", requireAuth, async (req: Request, res: Response) => {
     const inverterId = parseInt(req.params.id);
     const repairs = await storage.getRepairsByInverter(inverterId);
     res.json(repairs);
   });
   
-  app.get("/api/repairs/:id", async (req: Request, res: Response) => {
+  app.get("/api/repairs/:id", requireAuth, async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const repair = await storage.getRepair(id);
     
@@ -762,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/repairs", async (req: Request, res: Response) => {
+  app.post("/api/repairs", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       // Extract the data first to handle faultTypeName before validation
       const requestData = { ...req.body };
@@ -848,7 +848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/repairs/:id", async (req: Request, res: Response) => {
+  app.put("/api/repairs/:id", requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -973,17 +973,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Register both PATCH and POST endpoints for the same handler
-  app.patch("/api/repairs/:id/status", handleRepairStatusUpdate);
-  app.post("/api/repairs/:id/status", handleRepairStatusUpdate);
+  app.patch("/api/repairs/:id/status", requireAuth, handleRepairStatusUpdate);
+  app.post("/api/repairs/:id/status", requireAuth, handleRepairStatusUpdate);
   
   // Used Components
-  app.get("/api/repairs/:id/components", async (req: Request, res: Response) => {
+  app.get("/api/repairs/:id/components", requireAuth, async (req: Request, res: Response) => {
     const repairId = parseInt(req.params.id);
     const usedComponents = await storage.getUsedComponentsByRepair(repairId);
     res.json(usedComponents);
   });
   
-  app.post("/api/repairs/:id/components", async (req: Request, res: Response) => {
+  app.post("/api/repairs/:id/components", requireAuth, async (req: Request, res: Response) => {
     try {
       const repairId = parseInt(req.params.id);
       const data = { ...req.body, repairId };
@@ -1061,7 +1061,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PDF Report generation endpoint
-  app.get("/api/repairs/:id/report", async (req: Request, res: Response) => {
+  app.get("/api/repairs/:id/report", requireAuth, async (req: Request, res: Response) => {
     const { id } = req.params;
     
     try {
@@ -1113,8 +1113,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Settings API endpoints
-  app.get("/api/settings/:key", async (req: Request, res: Response) => {
+  // Settings API endpoints (Admin only)
+  app.get("/api/settings/:key", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const { key } = req.params;
       
@@ -1154,7 +1154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/settings/:key", async (req: Request, res: Response) => {
+  app.put("/api/settings/:key", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const { key } = req.params;
       const value = req.body;

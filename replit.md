@@ -56,6 +56,17 @@ The application uses Drizzle ORM for database management. Key tables include:
 8. **User Authentication**: Session-based authentication with bcrypt password hashing and role-based access
 
 ## Recent Changes
+- **Role-Based Access Control System** (2025-11-15)
+  - Implemented comprehensive RBAC with two user roles: Admin and Technician
+  - Backend: Applied requireRole(['Admin']) middleware for admin-only operations
+  - Backend: Applied requireAuth middleware for shared operations
+  - Frontend: Enhanced ProtectedRoute component with requiredRoles prop
+  - Frontend: Role-based login redirect (Technician → /repairs, Admin → /dashboard)
+  - Frontend: Sidebar filtered by role (Technicians see only "Repair Logs")
+  - Frontend: UI buttons conditionally rendered by role (Edit/Delete hidden for Technicians)
+  - Technicians can: view repairs, update status, add progress, record components, generate PDFs
+  - Technicians cannot: create/delete repairs, access inventory/settings/users pages
+  - All tests passed - no 403 errors in Technician workflow
 - **User Authentication System** (2025-11-15)
   - Implemented session-based authentication using Passport.js LocalStrategy
   - Added bcrypt password hashing (10 salt rounds) for secure password storage
@@ -65,7 +76,7 @@ The application uses Drizzle ORM for database management. Key tables include:
   - Protected all application routes (redirect to login if not authenticated)
   - Made user profile dynamic in top navigation (shows name, role, logout)
   - Migrated existing users from plain-text to hashed passwords
-  - Default user: admin/admin (Admin role)
+  - Default users: admin/admin (Admin role), test/test123 (Technician role)
 - **Customer Repair Tracking Feature** (2025-11-15)
   - Added tracking_token field to repairs table for unique shareable links
   - Created public tracking endpoint: GET /api/track/:token (no authentication required)

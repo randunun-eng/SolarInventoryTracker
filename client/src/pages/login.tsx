@@ -26,6 +26,16 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+// Role-to-route mapping configuration
+// When adding new roles, add their default landing page here
+const ROLE_DEFAULT_ROUTES: Record<string, string> = {
+  'Admin': '/dashboard',
+  'Technician': '/repairs',
+  // Add new roles here in the future
+  // 'Manager': '/reports',
+  // 'Supervisor': '/repairs',
+};
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -44,8 +54,11 @@ export default function Login() {
       setIsLoading(true);
       const result = await apiRequest("POST", "/api/auth/login", data);
       
-      // Use window.location to force a full page reload with new session
-      window.location.href = "/dashboard";
+      // Redirect based on user role using centralized configuration
+      // Fallback to /repairs (accessible to all authenticated users) instead of /dashboard
+      const role = result.user?.role;
+      const defaultRoute = ROLE_DEFAULT_ROUTES[role] || '/repairs';
+      window.location.href = defaultRoute;
     } catch (error: any) {
       toast({
         title: "Login failed",

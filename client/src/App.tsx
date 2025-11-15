@@ -15,12 +15,18 @@ import RepairStatus from "@/pages/repair-status";
 import Users from "@/pages/users";
 import TrackRepair from "@/pages/track-repair";
 import Login from "@/pages/login";
+import AccessDenied from "@/pages/access-denied";
 import { ChatBot } from "@/components/ai/chat-bot";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { Loader2 } from "lucide-react";
 
-function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
-  const { isAuthenticated, isLoading } = useAuth();
+interface ProtectedRouteProps {
+  component: () => JSX.Element;
+  requiredRoles?: string[];
+}
+
+function ProtectedRoute({ component: Component, requiredRoles }: ProtectedRouteProps) {
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -34,24 +40,33 @@ function ProtectedRoute({ component: Component }: { component: () => JSX.Element
     return <Redirect to="/login" />;
   }
 
+  // Check if user has required role
+  if (requiredRoles && user && !requiredRoles.includes(user.role)) {
+    return <Redirect to="/access-denied" />;
+  }
+
   return <Component />;
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/components" component={() => <ProtectedRoute component={Components} />} />
-      <Route path="/categories" component={() => <ProtectedRoute component={Categories} />} />
-      <Route path="/suppliers" component={() => <ProtectedRoute component={Suppliers} />} />
-      <Route path="/stockalerts" component={() => <ProtectedRoute component={StockAlerts} />} />
-      <Route path="/clients" component={() => <ProtectedRoute component={Clients} />} />
+      {/* Admin-only routes */}
+      <Route path="/" component={() => <ProtectedRoute component={Dashboard} requiredRoles={['Admin']} />} />
+      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} requiredRoles={['Admin']} />} />
+      <Route path="/components" component={() => <ProtectedRoute component={Components} requiredRoles={['Admin']} />} />
+      <Route path="/categories" component={() => <ProtectedRoute component={Categories} requiredRoles={['Admin']} />} />
+      <Route path="/suppliers" component={() => <ProtectedRoute component={Suppliers} requiredRoles={['Admin']} />} />
+      <Route path="/stockalerts" component={() => <ProtectedRoute component={StockAlerts} requiredRoles={['Admin']} />} />
+      <Route path="/clients" component={() => <ProtectedRoute component={Clients} requiredRoles={['Admin']} />} />
+      <Route path="/invoices" component={() => <ProtectedRoute component={Invoices} requiredRoles={['Admin']} />} />
+      <Route path="/users" component={() => <ProtectedRoute component={Users} requiredRoles={['Admin']} />} />
+      <Route path="/settings" component={() => <ProtectedRoute component={Settings} requiredRoles={['Admin']} />} />
+      
+      {/* Shared routes (Admin and Technician) */}
       <Route path="/repairs" component={() => <ProtectedRoute component={Repairs} />} />
       <Route path="/repairs/:id/status" component={() => <ProtectedRoute component={RepairStatus} />} />
-      <Route path="/invoices" component={() => <ProtectedRoute component={Invoices} />} />
-      <Route path="/users" component={() => <ProtectedRoute component={Users} />} />
-      <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      
       <Route component={NotFound} />
     </Switch>
   );
@@ -65,6 +80,7 @@ function App() {
           {/* Public routes - no auth required */}
           <Route path="/login" component={Login} />
           <Route path="/track/:token" component={TrackRepair} />
+          <Route path="/access-denied" component={AccessDenied} />
           
           {/* Protected routes with layout */}
           <Route>

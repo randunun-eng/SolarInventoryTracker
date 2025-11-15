@@ -43,6 +43,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDateTime, getStatusColor } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
 import {
   Select,
   SelectContent,
@@ -67,6 +68,8 @@ import { RepairStatusEnum } from "@shared/schema";
 export default function Repairs() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [isAddRepairOpen, setIsAddRepairOpen] = useState(false);
@@ -184,13 +187,15 @@ export default function Repairs() {
           <h1 className="text-2xl font-bold text-slate-800">Repair Logs</h1>
           <p className="text-slate-500">Track and manage all solar inverter repairs</p>
         </div>
-        <Button 
-          className="mt-4 md:mt-0" 
-          onClick={() => setIsAddRepairOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Create Repair Log
-        </Button>
+        {isAdmin && (
+          <Button 
+            className="mt-4 md:mt-0" 
+            onClick={() => setIsAddRepairOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create Repair Log
+          </Button>
+        )}
       </div>
 
       {/* Search and Filter */}
@@ -279,23 +284,28 @@ export default function Repairs() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => handleViewRepair(repair.id)}
+                              data-testid={`button-view-repair-${repair.id}`}
                             >
                               <Eye className="h-4 w-4" />
                               <span className="sr-only">View</span>
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleEditRepair(repair.id)}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
+                            {isAdmin && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleEditRepair(repair.id)}
+                                data-testid={`button-edit-repair-${repair.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                            )}
                             <Button 
                               variant="outline"
                               size="sm"
                               onClick={() => handleUpdateProgress(repair.id)}
                               className="mr-1 text-xs"
+                              data-testid={`button-update-progress-${repair.id}`}
                             >
                               Update Progress
                             </Button>
@@ -303,18 +313,22 @@ export default function Repairs() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => window.open(`/api/repairs/${repair.id}/report`, '_blank')}
+                              data-testid={`button-report-${repair.id}`}
                             >
                               <FileText className="h-4 w-4 text-primary-500" />
                               <span className="sr-only">Report</span>
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleDeleteRepair(repair.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
+                            {isAdmin && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleDeleteRepair(repair.id)}
+                                data-testid={`button-delete-repair-${repair.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
