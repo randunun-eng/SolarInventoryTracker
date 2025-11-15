@@ -71,7 +71,7 @@ export default function TrackRepair() {
   const token = params?.token;
 
   const { data: repair, isLoading, error } = useQuery<PublicRepairData>({
-    queryKey: ["/api/track", token],
+    queryKey: [`/api/track/${token}`],
     enabled: !!token,
   });
 

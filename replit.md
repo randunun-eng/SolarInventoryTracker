@@ -32,7 +32,7 @@ When entering prices, always enter the value in your local currency (LKR). The s
 ### Database Schema
 The application uses Drizzle ORM for database management. Key tables include:
 - `components` - Electronic component inventory
-- `repairs` - Repair job tracking
+- `repairs` - Repair job tracking (includes `tracking_token` field for customer tracking)
 - `clients` - Customer information
 - `inverters` - Solar inverter device records
 - `fault_types` - Categorization of repair issues
@@ -51,9 +51,17 @@ The application uses Drizzle ORM for database management. Key tables include:
 3. **Client Management**: Store customer information and history
 4. **Progress Updates**: Real-time updates with photo attachments
 5. **PDF Reports**: Generate detailed repair reports with embedded photos
-6. **Settings Management**: Configure currency, tax rates, labor rates, and notifications
+6. **Customer Tracking**: Public shareable links for customers to track repair status without login
+7. **Settings Management**: Configure currency, tax rates, labor rates, and notifications
 
 ## Recent Changes
+- **Customer Repair Tracking Feature** (2025-11-15)
+  - Added tracking_token field to repairs table for unique shareable links
+  - Created public tracking endpoint: GET /api/track/:token (no authentication required)
+  - Built customer-facing tracking page at /track/:token showing repair status, history, and details
+  - Added "Copy Tracking Link" button to repair detail modal for staff to share with customers
+  - Automatically generates tracking tokens for all new repairs
+  - Backfilled tracking tokens for 13 existing repairs
 - Added LKR (Sri Lankan Rupee) to currency dropdown (2025-01-15)
 - Fixed database parameter handling for Neon database (2025-01-15)
 - Created settings table in database (2025-01-15)
@@ -65,6 +73,11 @@ The application uses Drizzle ORM for database management. Key tables include:
 - Image optimization: 120px screen view, 80px print view with object-fit: contain
 - Currency symbols are mapped in both settings.tsx and component-form.tsx
 - Settings are stored as JSONB in the database for flexibility
+- **Customer Tracking Links**: 
+  - Unique 16-character hex tokens generated via crypto.randomBytes(8)
+  - Public endpoint returns only customer-facing data (no pricing, technician notes, or internal metadata)
+  - Tracking page route (/track/:token) is outside the authenticated layout
+  - TanStack Query queryKey must include full URL path: `[/api/track/${token}]` not `["/api/track", token]`
 
 ## File Structure
 - `/client` - React frontend application
