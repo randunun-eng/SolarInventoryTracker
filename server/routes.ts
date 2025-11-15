@@ -213,8 +213,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // put application routes here
   // prefix all routes with /api
   
-  // User Management
-  app.get("/api/users", async (req: Request, res: Response) => {
+  // User Management (Admin only)
+  app.get("/api/users", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const users = await storage.getUsers();
       res.json(users);
@@ -224,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/users/:id", async (req: Request, res: Response) => {
+  app.get("/api/users/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.getUser(id);
@@ -240,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/users", async (req: Request, res: Response) => {
+  app.post("/api/users", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const data = insertUserSchema.parse(req.body);
       const user = await storage.createUser(data);
@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/users/:id", async (req: Request, res: Response) => {
+  app.put("/api/users/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -290,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/users/:id", async (req: Request, res: Response) => {
+  app.delete("/api/users/:id", requireRole(['Admin']), async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const result = await storage.deleteUser(id);
