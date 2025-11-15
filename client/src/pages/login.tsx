@@ -44,22 +44,25 @@ export default function Login() {
       setIsLoading(true);
       const result = await apiRequest("POST", "/api/auth/login", data);
       
-      // Invalidate auth cache and redirect
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      
       toast({
         title: "Login successful",
         description: `Welcome back, ${result.user.name || result.user.username}!`,
       });
       
-      setLocation("/dashboard");
+      // Invalidate auth cache and wait for refetch, then redirect
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/me"] });
+      
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 100);
     } catch (error: any) {
       toast({
         title: "Login failed",
         description: error.message || "Invalid username or password",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
