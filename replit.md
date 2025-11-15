@@ -95,13 +95,25 @@ The application uses Drizzle ORM for database management. Key tables include:
 - Image optimization: 120px screen view, 80px print view with object-fit: contain
 - Currency symbols are mapped in both settings.tsx and component-form.tsx
 - Settings are stored as JSONB in the database for flexibility
+- **Role-Based Access Control**:
+  - Backend: requireRole(['Admin']) middleware for admin-only routes
+  - Backend: requireAuth middleware for shared routes
+  - Backend: Technicians have read access to support data (components, categories, suppliers, clients, inverters, fault-types)
+  - Backend: Technicians can update repairs, add progress, and record component usage
+  - Backend: Only Admins can create/delete repairs and modify inventory/settings
+  - Frontend: ProtectedRoute component with requiredRoles prop
+  - Frontend: Role-based login redirect via ROLE_DEFAULT_ROUTES mapping
+  - Frontend: Sidebar filtered by role (Technicians see only "Repair Logs")
+  - Frontend: UI buttons conditionally rendered by role
+  - Frontend: Access Denied (403) page for unauthorized access attempts
+  - Login redirect: Admin → /dashboard, Technician → /repairs, Unknown → /repairs (safe fallback)
 - **Authentication System**:
   - Session-based auth with express-session + Passport.js LocalStrategy
   - Passwords hashed using bcrypt (10 salt rounds)
   - AuthProvider manages global auth state via TanStack Query
   - ProtectedRoute component wraps all authenticated routes
   - Public routes: /login, /track/:token (no auth required)
-  - User roles: Admin, Manager, Technician
+  - User roles: Admin, Technician (extensible via ROLE_DEFAULT_ROUTES mapping)
   - Auth endpoints: POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me
 - **Customer Tracking Links**: 
   - Unique 16-character hex tokens generated via crypto.randomBytes(8)
