@@ -299,6 +299,21 @@ export const componentsRelations = relations(components, ({ one, many }) => ({
   usedComponents: many(usedComponents),
 }));
 
+// Settings table for application-wide configuration
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSettingsSchema = createInsertSchema(settings).pick({
+  key: true,
+  value: true,
+});
+
+export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+export type Settings = typeof settings.$inferSelect;
+
 export const purchasesRelations = relations(purchases, ({ one }) => ({
   component: one(components, {
     fields: [purchases.componentId],
