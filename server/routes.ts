@@ -1133,7 +1133,7 @@ function generateRepairReportHTML(
         @media print {
           body { margin: 0; }
           .no-print { display: none; }
-          img { max-width: 120px !important; height: auto !important; }
+          img { max-width: 80px !important; height: auto !important; object-fit: contain !important; }
         }
         @page {
           size: A4;
@@ -1368,11 +1368,11 @@ function generateRepairReportHTML(
               ${update.photos && update.photos.length > 0 ? `
                 <div style="margin-top: 15px;">
                   <div class="info-label" style="margin-bottom: 10px;">Attached Photos (${update.photos.length}):</div>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 200px)); gap: 15px; margin-top: 10px; justify-content: start;">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 120px)); gap: 10px; margin-top: 10px; justify-content: start;">
                     ${update.photos.map((photo: string) => `
-                      <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: white;">
-                        <img src="${photo}" alt="Progress photo" style="width: 100%; max-width: 200px; height: auto; object-fit: contain; border-radius: 6px; margin-bottom: 8px;" />
-                        <div style="font-size: 12px; color: #64748b; text-align: center;">Progress Photo</div>
+                      <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; background: white;">
+                        <img src="${photo}" alt="Progress photo" style="width: 100%; max-width: 120px; height: auto; object-fit: contain; border-radius: 4px; margin-bottom: 6px; display: block;" />
+                        <div style="font-size: 11px; color: #64748b; text-align: center;">Progress Photo</div>
                       </div>
                     `).join('')}
                   </div>

@@ -372,6 +372,7 @@ export default function Settings() {
                                   <SelectItem value="GBP">GBP (£)</SelectItem>
                                   <SelectItem value="CAD">CAD ($)</SelectItem>
                                   <SelectItem value="AUD">AUD ($)</SelectItem>
+                                  <SelectItem value="LKR">LKR (Rs)</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
