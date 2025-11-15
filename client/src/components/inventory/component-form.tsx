@@ -6,6 +6,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { insertComponentSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
+// Currency symbol mapping
+const currencySymbols: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  CAD: "$",
+  AUD: "$",
+  LKR: "Rs",
+};
+
 import {
   Form,
   FormControl,
@@ -63,6 +73,15 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
   const { data: suppliers, isLoading: isLoadingSuppliers } = useQuery({
     queryKey: ["/api/suppliers"],
   });
+
+  // Fetch general settings for currency
+  const { data: generalSettings } = useQuery({
+    queryKey: ["/api/settings/general"],
+  });
+
+  // Get currency symbol
+  const currency = generalSettings?.currency || "USD";
+  const currencySymbol = currencySymbols[currency] || "$";
 
   // Set up form with default values or component data
   const form = useForm<ComponentFormValues>({
@@ -284,7 +303,7 @@ export function ComponentForm({ componentId, onSuccess }: ComponentFormProps) {
             name="supplierPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unit Price ($)</FormLabel>
+                <FormLabel>Unit Price ({currencySymbol})</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
