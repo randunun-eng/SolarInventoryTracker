@@ -11,8 +11,28 @@ if (!process.env.DATABASE_URL) {
 const sql = neon(process.env.DATABASE_URL);
 export const db = drizzle(sql, { schema });
 
-// Add execute method for raw SQL queries
+// Add execute method for raw SQL queries that handles parameterized queries
 // @ts-ignore - Adding execute method to db object
 db.execute = async (query: string, params: any[] = []) => {
-  return await sql(query);
+  // Replace $1, $2, etc. with actual parameter values for Neon
+  let processedQuery = query;
+  params.forEach((param, index) => {
+    const placeholder = `$${index + 1}`;
+    // Escape and quote the parameter value properly
+    let value: string;
+    if (param === null || param === undefined) {
+      value = 'NULL';
+    } else if (typeof param === 'string') {
+      value = `'${param.replace(/'/g, "''")}'`;
+    } else if (typeof param === 'number' || typeof param === 'boolean') {
+      value = String(param);
+    } else {
+      // For objects/arrays, convert to JSON and escape quotes
+      const jsonStr = JSON.stringify(param);
+      value = `'${jsonStr.replace(/'/g, "''")}'`;
+    }
+    processedQuery = processedQuery.replace(placeholder, value);
+  });
+  
+  return await sql(processedQuery);
 };
