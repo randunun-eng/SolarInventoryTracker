@@ -153,6 +153,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ user: req.user });
   });
 
+  // Verify admin password for password elevation
+  app.post("/api/auth/verify-admin", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { password } = req.body;
+      
+      if (!password) {
+        return res.status(400).json({ error: "Password is required" });
+      }
+
+      // Find an admin user (in this case, we'll use the 'admin' username)
+      const adminUser = await storage.getUserByUsername("admin");
+      
+      if (!adminUser) {
+        return res.status(500).json({ error: "Admin user not found" });
+      }
+
+      // Verify the provided password against the admin password
+      const isValidPassword = await bcrypt.compare(password, adminUser.password);
+      
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid admin password" });
+      }
+
+      // Grant temporary admin access by updating session
+      // We'll add an adminElevated flag to the session
+      if (req.session) {
+        (req.session as any).adminElevated = true;
+        (req.session as any).adminElevatedAt = Date.now();
+      }
+
+      res.json({ message: "Admin password verified successfully" });
+    } catch (error) {
+      console.error("Error verifying admin password:", error);
+      res.status(500).json({ error: "Failed to verify admin password" });
+    }
+  });
+
   // Handle datasheet uploads specifically
   app.post("/api/upload/datasheet", upload.single('datasheet'), async (req: Request, res: Response) => {
     try {
