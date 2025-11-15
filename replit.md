@@ -53,8 +53,19 @@ The application uses Drizzle ORM for database management. Key tables include:
 5. **PDF Reports**: Generate detailed repair reports with embedded photos
 6. **Customer Tracking**: Public shareable links for customers to track repair status without login
 7. **Settings Management**: Configure currency, tax rates, labor rates, and notifications
+8. **User Authentication**: Session-based authentication with bcrypt password hashing and role-based access
 
 ## Recent Changes
+- **User Authentication System** (2025-11-15)
+  - Implemented session-based authentication using Passport.js LocalStrategy
+  - Added bcrypt password hashing (10 salt rounds) for secure password storage
+  - Created authentication endpoints: /api/auth/login, /api/auth/logout, /api/auth/me
+  - Built login page with form validation and error handling
+  - Added AuthProvider using TanStack Query for global auth state management
+  - Protected all application routes (redirect to login if not authenticated)
+  - Made user profile dynamic in top navigation (shows name, role, logout)
+  - Migrated existing users from plain-text to hashed passwords
+  - Default user: admin/admin (Admin role)
 - **Customer Repair Tracking Feature** (2025-11-15)
   - Added tracking_token field to repairs table for unique shareable links
   - Created public tracking endpoint: GET /api/track/:token (no authentication required)
@@ -73,6 +84,14 @@ The application uses Drizzle ORM for database management. Key tables include:
 - Image optimization: 120px screen view, 80px print view with object-fit: contain
 - Currency symbols are mapped in both settings.tsx and component-form.tsx
 - Settings are stored as JSONB in the database for flexibility
+- **Authentication System**:
+  - Session-based auth with express-session + Passport.js LocalStrategy
+  - Passwords hashed using bcrypt (10 salt rounds)
+  - AuthProvider manages global auth state via TanStack Query
+  - ProtectedRoute component wraps all authenticated routes
+  - Public routes: /login, /track/:token (no auth required)
+  - User roles: Admin, Manager, Technician
+  - Auth endpoints: POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me
 - **Customer Tracking Links**: 
   - Unique 16-character hex tokens generated via crypto.randomBytes(8)
   - Public endpoint returns only customer-facing data (no pricing, technician notes, or internal metadata)
