@@ -9,6 +9,12 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import express from "express";
+import crypto from "crypto";
+
+// Helper function to generate unique tracking token
+function generateTrackingToken(): string {
+  return crypto.randomBytes(8).toString('hex');
+}
 
 // Configure multer storage for file uploads
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -676,6 +682,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     res.json(repair);
   });
+
+  // Public tracking endpoint - no authentication required
+  app.get("/api/track/:token", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      // Query repair by tracking token
+      const result = await db.execute(
+        `SELECT r.*, c.name as client_name, c.email as client_email, c.phone as client_phone
+         FROM repairs r
+         LEFT JOIN clients c ON r.client_id = c.id
+         WHERE r.tracking_token = $1`,
+        [token]
+      );
+      
+      if (!result.rows || result.rows.length === 0) {
+        return res.status(404).json({ message: "Repair not found or invalid tracking link" });
+      }
+      
+      const repair = result.rows[0];
+      
+      // Return only customer-facing information (hide internal details)
+      const publicRepairData = {
+        id: repair.id,
+        status: repair.status,
+        receivedDate: repair.received_date,
+        estimatedCompletionDate: repair.estimated_completion_date,
+        completionDate: repair.completion_date,
+        faultDescription: repair.fault_description,
+        inverterModel: repair.inverter_model,
+        inverterSerialNumber: repair.inverter_serial_number,
+        statusHistory: repair.status_history || [],
+        clientName: repair.client_name,
+      };
+      
+      res.json(publicRepairData);
+    } catch (error) {
+      console.error("Error fetching repair by tracking token:", error);
+      res.status(500).json({ error: "Failed to fetch repair information" });
+    }
+  });
   
   app.post("/api/repairs", async (req: Request, res: Response) => {
     try {
@@ -741,11 +788,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userName: null
         };
         
-        // Create the repair with status history
+        // Generate tracking token for customer tracking
+        const trackingToken = generateTrackingToken();
+        
+        // Create the repair with status history and tracking token
         const repair = await storage.createRepair({
           ...data,
           status: initialStatus,
-          statusHistory: [initialEntry]
+          statusHistory: [initialEntry],
+          trackingToken
         });
         
         res.status(201).json(repair);

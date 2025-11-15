@@ -208,6 +208,8 @@ export const repairs = pgTable("repairs", {
   // New fields for remarks and priority
   remarks: text("remarks"),
   priority: text("priority").default("Medium"),
+  // Tracking token for customer-facing repair status page
+  trackingToken: text("tracking_token").unique(),
 });
 
 export const insertRepairSchema = createInsertSchema(repairs).pick({
