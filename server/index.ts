@@ -1,17 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import cors from "cors";
 import passport from "./auth";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-
-// Enable CORS with credentials
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
 
 // Increase JSON payload size limit to 20MB
 app.use(express.json({ limit: '20mb' }));

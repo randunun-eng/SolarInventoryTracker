@@ -44,19 +44,8 @@ export default function Login() {
       setIsLoading(true);
       const result = await apiRequest("POST", "/api/auth/login", data);
       
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${result.user.name || result.user.username}!`,
-      });
-      
-      // Invalidate auth cache and wait for refetch, then redirect
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      await queryClient.refetchQueries({ queryKey: ["/api/auth/me"] });
-      
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 100);
+      // Use window.location to force a full page reload with new session
+      window.location.href = "/dashboard";
     } catch (error: any) {
       toast({
         title: "Login failed",
