@@ -1,0 +1,34 @@
+name = "solar-inventory-tracker-api"
+main = "worker/index.ts"
+compatibility_date = "2024-11-15"
+compatibility_flags = ["nodejs_compat"]
+
+# KV Namespaces for session storage
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "placeholder_sessions_id"
+preview_id = "placeholder_sessions_preview_id"
+
+# R2 Buckets for file uploads
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "solar-inventory-uploads"
+preview_bucket_name = "solar-inventory-uploads-preview"
+
+# Environment variables (set these in Cloudflare dashboard or using wrangler secret)
+[vars]
+NODE_ENV = "production"
+
+# For local development
+[env.dev]
+name = "solar-inventory-tracker-api-dev"
+vars = { NODE_ENV = "development" }
+
+# Build configuration
+[build]
+command = "npm run build:worker"
+
+# Route configuration (optional - configure in Cloudflare dashboard)
+# routes = [
+#   { pattern = "api.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
