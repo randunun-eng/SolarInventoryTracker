@@ -138,6 +138,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", (req: Request, res: Response) => {
+    // Clear admin elevation on logout
+    if (req.session) {
+      (req.session as any).adminElevated = false;
+      (req.session as any).adminElevatedAt = null;
+    }
+    
     req.logout((err) => {
       if (err) {
         return res.status(500).json({ error: "Logout failed" });
@@ -150,7 +156,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    res.json({ user: req.user });
+    
+    // Include elevation status in response
+    const elevationTimestamp = (req.session as any)?.adminElevatedAt;
+    const isElevated = (req.session as any)?.adminElevated === true;
+    const isElevationValid = isElevated && elevationTimestamp && 
+                            (Date.now() - elevationTimestamp < 60 * 60 * 1000); // 1 hour
+    
+    // Clear expired elevation
+    if (isElevated && !isElevationValid && req.session) {
+      (req.session as any).adminElevated = false;
+      (req.session as any).adminElevatedAt = null;
+    }
+    
+    res.json({ 
+      user: req.user,
+      adminElevated: isElevationValid 
+    });
   });
 
   // Verify admin password for password elevation

@@ -56,17 +56,18 @@ The application uses Drizzle ORM for database management. Key tables include:
 8. **User Authentication**: Session-based authentication with bcrypt password hashing and role-based access
 
 ## Recent Changes
-- **Role-Based Access Control System** (2025-11-15)
-  - Implemented comprehensive RBAC with two user roles: Admin and Technician
-  - Backend: Applied requireRole(['Admin']) middleware for admin-only operations
-  - Backend: Applied requireAuth middleware for shared operations
-  - Frontend: Enhanced ProtectedRoute component with requiredRoles prop
-  - Frontend: Role-based login redirect (Technician → /repairs, Admin → /dashboard)
-  - Frontend: Sidebar filtered by role (Technicians see only "Repair Logs")
-  - Frontend: UI buttons conditionally rendered by role (Edit/Delete hidden for Technicians)
-  - Technicians can: view repairs, update status, add progress, record components, generate PDFs
-  - Technicians cannot: create/delete repairs, access inventory/settings/users pages
-  - All tests passed - no 403 errors in Technician workflow
+- **Password Elevation System** (2025-11-15)
+  - Implemented admin password elevation for Technician access to restricted areas
+  - All users see complete sidebar navigation (no role-based filtering)
+  - When Technicians click admin-restricted pages, admin password dialog appears
+  - Successful password verification grants temporary admin access (1-hour expiry)
+  - Backend: Updated requireRole middleware to check both user role AND adminElevated session flag
+  - Backend: Added /api/auth/verify-admin endpoint to verify admin password
+  - Frontend: AdminPasswordDialog component for password entry
+  - Frontend: AdminElevationProvider manages elevation state across app
+  - Frontend: ProtectedRoute shows password dialog instead of Access Denied page
+  - Session-based elevation with automatic expiry after 1 hour
+  - Elevation cleared on logout or timeout for security
 - **User Authentication System** (2025-11-15)
   - Implemented session-based authentication using Passport.js LocalStrategy
   - Added bcrypt password hashing (10 salt rounds) for secure password storage
@@ -95,17 +96,17 @@ The application uses Drizzle ORM for database management. Key tables include:
 - Image optimization: 120px screen view, 80px print view with object-fit: contain
 - Currency symbols are mapped in both settings.tsx and component-form.tsx
 - Settings are stored as JSONB in the database for flexibility
-- **Role-Based Access Control**:
-  - Backend: requireRole(['Admin']) middleware for admin-only routes
-  - Backend: requireAuth middleware for shared routes
-  - Backend: Technicians have read access to support data (components, categories, suppliers, clients, inverters, fault-types)
-  - Backend: Technicians can update repairs, add progress, and record component usage
-  - Backend: Only Admins can create/delete repairs and modify inventory/settings
-  - Frontend: ProtectedRoute component with requiredRoles prop
-  - Frontend: Role-based login redirect via ROLE_DEFAULT_ROUTES mapping
-  - Frontend: Sidebar filtered by role (Technicians see only "Repair Logs")
-  - Frontend: UI buttons conditionally rendered by role
-  - Frontend: Access Denied (403) page for unauthorized access attempts
+- **Password Elevation System**:
+  - Backend: requireRole middleware checks both user.role AND session.adminElevated
+  - Backend: Admin password verified against 'admin' user account via bcrypt
+  - Backend: Elevation expires after 1 hour (checked on each request)
+  - Backend: Elevation cleared on logout or expiration
+  - Frontend: All users see complete sidebar (no role filtering)
+  - Frontend: ProtectedRoute shows AdminPasswordDialog for restricted pages
+  - Frontend: AdminElevationProvider manages elevation state via React Context
+  - Frontend: Successful password verification sets isElevated = true
+  - Admin password: Same as 'admin' user password (default: 'admin')
+  - Security: Elevation is session-based, not persisted to database
   - Login redirect: Admin → /dashboard, Technician → /repairs, Unknown → /repairs (safe fallback)
 - **Authentication System**:
   - Session-based auth with express-session + Passport.js LocalStrategy

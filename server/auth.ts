@@ -61,17 +61,35 @@ export function requireAuth(req: any, res: any, next: any) {
   res.status(401).json({ error: "Authentication required" });
 }
 
-// Middleware to check if user has specific role
+// Middleware to check if user has specific role OR is elevated via admin password
 export function requireRole(roles: string[]) {
   return (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Authentication required" });
     }
     
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: "Insufficient permissions" });
+    // Check if user has the required role
+    const hasRole = roles.includes(req.user.role);
+    
+    // Check if user has admin elevation (temporary admin access via password)
+    const isElevated = req.session?.adminElevated === true;
+    
+    // Check if elevation is still valid (within 1 hour)
+    const elevationTimestamp = req.session?.adminElevatedAt;
+    const isElevationValid = isElevated && elevationTimestamp && 
+                            (Date.now() - elevationTimestamp < 60 * 60 * 1000); // 1 hour
+    
+    // Grant access if user has role OR has valid elevation
+    if (hasRole || isElevationValid) {
+      return next();
     }
     
-    next();
+    // If elevation expired, clear it
+    if (isElevated && !isElevationValid) {
+      req.session.adminElevated = false;
+      req.session.adminElevatedAt = null;
+    }
+    
+    return res.status(403).json({ error: "Insufficient permissions" });
   };
 }

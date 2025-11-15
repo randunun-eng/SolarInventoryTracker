@@ -18,7 +18,10 @@ import Login from "@/pages/login";
 import AccessDenied from "@/pages/access-denied";
 import { ChatBot } from "@/components/ai/chat-bot";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { AdminElevationProvider, useAdminElevation } from "@/lib/admin-elevation";
+import { AdminPasswordDialog } from "@/components/admin-password-dialog";
 import { Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 interface ProtectedRouteProps {
   component: () => JSX.Element;
@@ -27,6 +30,22 @@ interface ProtectedRouteProps {
 
 function ProtectedRoute({ component: Component, requiredRoles }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { isElevated, elevate } = useAdminElevation();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const verificationSucceededRef = useRef(false);
+
+  // Check if user has required role or is elevated
+  const hasAccess = !requiredRoles || 
+                    (user && user.role && requiredRoles.includes(user.role)) || 
+                    isElevated;
+
+  // Use useEffect to show password dialog when access is needed (avoid setState during render)
+  useEffect(() => {
+    if (!hasAccess && requiredRoles && !showPasswordDialog) {
+      setShowPasswordDialog(true);
+      verificationSucceededRef.current = false; // Reset ref when opening dialog
+    }
+  }, [hasAccess, requiredRoles, showPasswordDialog]);
 
   if (isLoading) {
     return (
@@ -40,11 +59,37 @@ function ProtectedRoute({ component: Component, requiredRoles }: ProtectedRouteP
     return <Redirect to="/login" />;
   }
 
-  // Check if user has required role
-  if (requiredRoles && user && !requiredRoles.includes(user.role)) {
-    return <Redirect to="/access-denied" />;
+  // Block rendering of component until access is granted (prevents 403 errors on mount)
+  if (!hasAccess) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-slate-600">Verifying access...</p>
+          </div>
+        </div>
+        <AdminPasswordDialog
+          open={showPasswordDialog}
+          onOpenChange={(open) => {
+            // Only redirect if user cancelled (not if verification succeeded)
+            if (!open && !verificationSucceededRef.current) {
+              window.location.href = "/repairs";
+            }
+            setShowPasswordDialog(open);
+          }}
+          onSuccess={() => {
+            verificationSucceededRef.current = true; // Set synchronously before elevation
+            elevate();
+            setShowPasswordDialog(false); // Close dialog explicitly
+          }}
+          targetPage={requiredRoles?.join(", ") + " area"}
+        />
+      </>
+    );
   }
 
+  // Only render component when access is granted
   return <Component />;
 }
 
@@ -76,20 +121,22 @@ function App() {
   return (
     <TooltipProvider>
       <AuthProvider>
-        <Switch>
-          {/* Public routes - no auth required */}
-          <Route path="/login" component={Login} />
-          <Route path="/track/:token" component={TrackRepair} />
-          <Route path="/access-denied" component={AccessDenied} />
-          
-          {/* Protected routes with layout */}
-          <Route>
-            <Layout>
-              <Router />
-              <ChatBot />
-            </Layout>
-          </Route>
-        </Switch>
+        <AdminElevationProvider>
+          <Switch>
+            {/* Public routes - no auth required */}
+            <Route path="/login" component={Login} />
+            <Route path="/track/:token" component={TrackRepair} />
+            <Route path="/access-denied" component={AccessDenied} />
+            
+            {/* Protected routes with layout */}
+            <Route>
+              <Layout>
+                <Router />
+                <ChatBot />
+              </Layout>
+            </Route>
+          </Switch>
+        </AdminElevationProvider>
       </AuthProvider>
     </TooltipProvider>
   );
