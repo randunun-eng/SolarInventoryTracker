@@ -87,6 +87,16 @@ type NotificationsSettingsValues = z.infer<typeof notificationsSettingsSchema>;
 
 // Fetch real users from the database instead of using sample data
 
+// Currency symbol mapping
+const currencySymbols: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  CAD: "$",
+  AUD: "$",
+  LKR: "Rs",
+};
+
 export default function Settings() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("general");
@@ -114,6 +124,10 @@ export default function Settings() {
       currency: "USD",
     },
   });
+  
+  // Watch the currency field to update labor rate label
+  const selectedCurrency = generalForm.watch("currency");
+  const currencySymbol = currencySymbols[selectedCurrency] || "$";
   
   // Update form values when settings are loaded
   useEffect(() => {
@@ -399,7 +413,7 @@ export default function Settings() {
                           name="laborRate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Default Labor Rate ($/hr)</FormLabel>
+                              <FormLabel>Default Labor Rate ({currencySymbol}/hr)</FormLabel>
                               <FormControl>
                                 <Input placeholder="e.g. 85.00" {...field} />
                               </FormControl>
