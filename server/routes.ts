@@ -697,11 +697,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [token]
       );
       
-      if (!result.rows || result.rows.length === 0) {
+      if (!result || result.length === 0) {
         return res.status(404).json({ message: "Repair not found or invalid tracking link" });
       }
       
-      const repair = result.rows[0];
+      const repair = result[0];
       
       // Return only customer-facing information (hide internal details)
       const publicRepairData = {
