@@ -1,5 +1,6 @@
 node_modules/
 .env
+.env*.local
 .replit
 .upm
 backups/*.sql
@@ -8,3 +9,4 @@ dist/
 *.log
 .wrangler/
 client/.env
+!client/.env.production.local
