@@ -16,6 +16,7 @@ import Users from "@/pages/users";
 import TrackRepair from "@/pages/track-repair";
 import Login from "@/pages/login";
 import AccessDenied from "@/pages/access-denied";
+import TestDiagnostic from "@/pages/test-diagnostic";
 import { ChatBot } from "@/components/ai/chat-bot";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { AdminElevationProvider, useAdminElevation } from "@/lib/admin-elevation";
@@ -127,6 +128,7 @@ function App() {
             <Route path="/login" component={Login} />
             <Route path="/track/:token" component={TrackRepair} />
             <Route path="/access-denied" component={AccessDenied} />
+            <Route path="/test-diagnostic" component={TestDiagnostic} />
             
             {/* Protected routes with layout */}
             <Route>
