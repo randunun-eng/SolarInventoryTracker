@@ -91,23 +91,46 @@ export const mockRepairs = [
   {
     id: 1,
     clientId: 1,
+    inverterId: 1,
+    faultTypeId: null,
     inverterModel: "5KW Hybrid",
     inverterSerialNumber: "INV-2024-001",
     faultDescription: "Error code 11 - Grid voltage issue",
     status: "In Progress",
     priority: "High",
-    createdAt: new Date().toISOString(),
+    receivedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+    estimatedCompletionDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days from now
+    completionDate: null,
+    totalCost: 0,
+    remarks: "Customer reported intermittent grid connection issues",
+    trackingToken: "TRACK-001",
+    statusHistory: JSON.stringify([
+      { status: "Received", date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+      { status: "In Progress", date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() }
+    ]),
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     id: 2,
     clientId: 2,
+    inverterId: 2,
+    faultTypeId: null,
     inverterModel: "3.5KW Standard",
     inverterSerialNumber: "INV-2024-002",
     faultDescription: "Display not working",
     status: "Pending",
     priority: "Medium",
-    createdAt: new Date().toISOString(),
+    receivedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    estimatedCompletionDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
+    completionDate: null,
+    totalCost: 0,
+    remarks: "Display shows no output, backlight working",
+    trackingToken: "TRACK-002",
+    statusHistory: JSON.stringify([
+      { status: "Received", date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() }
+    ]),
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
   },
 ];
