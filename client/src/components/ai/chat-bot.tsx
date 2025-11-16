@@ -41,7 +41,7 @@ export function ChatBot() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState('');
-  const [voiceMode, setVoiceMode] = useState(true); // Enable voice feedback by default
+  const [voiceMode, setVoiceMode] = useState(false); // Disable voice by default to prevent auto-play issues
   const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();

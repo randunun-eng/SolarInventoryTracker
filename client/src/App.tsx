@@ -2,6 +2,7 @@ import { Switch, Route, Redirect } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout/sidebar";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Dashboard from "@/pages/dashboard";
 import Components from "@/pages/components";
 import Clients from "@/pages/clients";
@@ -120,27 +121,34 @@ function Router() {
 
 function App() {
   return (
-    <TooltipProvider>
-      <AuthProvider>
-        <AdminElevationProvider>
-          <Switch>
-            {/* Public routes - no auth required */}
-            <Route path="/login" component={Login} />
-            <Route path="/track/:token" component={TrackRepair} />
-            <Route path="/access-denied" component={AccessDenied} />
-            <Route path="/test-diagnostic" component={TestDiagnostic} />
-            
-            {/* Protected routes with layout */}
-            <Route>
-              <Layout>
-                <Router />
-                <ChatBot />
-              </Layout>
-            </Route>
-          </Switch>
-        </AdminElevationProvider>
-      </AuthProvider>
-    </TooltipProvider>
+    <ErrorBoundary componentName="Application">
+      <TooltipProvider>
+        <AuthProvider>
+          <AdminElevationProvider>
+            <Switch>
+              {/* Public routes - no auth required */}
+              <Route path="/login" component={Login} />
+              <Route path="/track/:token" component={TrackRepair} />
+              <Route path="/access-denied" component={AccessDenied} />
+              <Route path="/test-diagnostic" component={TestDiagnostic} />
+
+              {/* Protected routes with layout */}
+              <Route>
+                <Layout>
+                  <Router />
+                  <ErrorBoundary
+                    componentName="ChatBot"
+                    fallback={null}
+                  >
+                    <ChatBot />
+                  </ErrorBoundary>
+                </Layout>
+              </Route>
+            </Switch>
+          </AdminElevationProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </ErrorBoundary>
   );
 }
 
