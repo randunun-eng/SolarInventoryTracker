@@ -52,14 +52,21 @@ export default function Components() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Fetch components
-  const { data: components, isLoading: isLoadingComponents } = useQuery({
+  const { data: components, isLoading: isLoadingComponents, error: componentsError } = useQuery({
     queryKey: ["/api/components"],
   });
 
   // Fetch categories to display category names
-  const { data: categories } = useQuery({
+  const { data: categories, error: categoriesError } = useQuery({
     queryKey: ["/api/categories"],
   });
+
+  // Debug logging
+  console.log('Components data:', components);
+  console.log('Components is array:', Array.isArray(components));
+  console.log('Components type:', typeof components);
+  console.log('Categories data:', categories);
+  console.log('Categories is array:', Array.isArray(categories));
 
   // Delete component mutation
   const deleteComponentMutation = useMutation({
@@ -81,10 +88,16 @@ export default function Components() {
   });
 
   // Filtered components based on search term
-  const filteredComponents = components ? components.filter(component => 
+  // Safety check: ensure components is an array before filtering
+  const filteredComponents = (components && Array.isArray(components)) ? components.filter(component =>
     component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (component.partNumber && component.partNumber.toLowerCase().includes(searchTerm.toLowerCase()))
   ) : [];
+
+  // If components is not an array, show error
+  if (components && !Array.isArray(components)) {
+    console.error('Components is not an array!', components);
+  }
 
   // Helper function to get category name
   const getCategoryName = (categoryId?: number) => {

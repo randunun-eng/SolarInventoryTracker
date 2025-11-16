@@ -92,6 +92,15 @@ export default function TestDiagnostic() {
                 <p className="font-semibold mb-2 text-green-800">
                   ✅ Success - {Array.isArray(components) ? components.length : 'N/A'} components loaded
                 </p>
+                <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                  <p className="font-semibold text-blue-800">Data Type Check:</p>
+                  <p className="text-sm">Type: {typeof components}</p>
+                  <p className="text-sm">Is Array: {Array.isArray(components) ? '✅ YES' : '❌ NO'}</p>
+                  <p className="text-sm">Constructor: {components?.constructor?.name || 'unknown'}</p>
+                  {!Array.isArray(components) && typeof components === 'object' && (
+                    <p className="text-sm text-orange-600">⚠️ Object keys: {Object.keys(components).join(', ')}</p>
+                  )}
+                </div>
                 <pre className="text-sm max-h-96 overflow-auto">{JSON.stringify(components, null, 2)}</pre>
               </div>
             )}
