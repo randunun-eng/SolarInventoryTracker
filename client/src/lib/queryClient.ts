@@ -1,4 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getMockData } from "./mockData";
+
+// Check if mock mode is enabled
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -13,7 +17,15 @@ export async function apiRequest<T = any>(
   body?: unknown
 ): Promise<T> {
   console.log(`Making API request: ${method} ${url}`, body);
-  
+
+  // Return mock data if enabled
+  if (USE_MOCK_DATA) {
+    console.log('🎭 Using mock data for:', url);
+    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+    const mockData = getMockData(url);
+    if (mockData) return mockData;
+  }
+
   const res = await fetch(url, {
     method,
     headers: body ? { "Content-Type": "application/json" } : {},
@@ -31,7 +43,17 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+
+    // Return mock data if enabled
+    if (USE_MOCK_DATA) {
+      console.log('🎭 Using mock data for:', url);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+      const mockData = getMockData(url);
+      if (mockData) return mockData;
+    }
+
+    const res = await fetch(url, {
       credentials: "include",
     });
 

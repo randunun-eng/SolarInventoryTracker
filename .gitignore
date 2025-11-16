@@ -6,3 +6,5 @@ backups/*.sql
 dist/
 .DS_Store
 *.log
+.wrangler/
+client/.env
