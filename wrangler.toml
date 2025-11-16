@@ -1,0 +1,28 @@
+name = "solar-inventory-tracker"
+compatibility_date = "2024-11-16"
+
+# Configuration for Cloudflare Pages
+pages_build_output_dir = "dist/public"
+
+# AI Binding - Access to Cloudflare Workers AI
+[ai]
+binding = "AI"
+
+# D1 Database Binding - Serverless SQLite Database
+[[d1_databases]]
+binding = "DB"
+database_name = "solar-inventory-db"
+database_id = "d1172e52-4911-4bb5-aa89-5031fee8146d"
+
+# KV Namespace Binding - Session Storage
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "c0f9c485f4a342988efac7433605d281"
+
+# For Pages deployment, you can specify build commands and environment variables
+# [build]
+# command = "npm run build"
+
+# Environment variables can be set here or in the Cloudflare dashboard
+[vars]
+CLOUDFLARE_AI_URL = "https://solar-inventory-ai.randunun.workers.dev"

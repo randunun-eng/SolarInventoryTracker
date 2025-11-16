@@ -1,0 +1,12 @@
+# Cloudflare Pages SPA Configuration
+# This file ensures all routes are handled by the React app
+
+# API routes - pass through to Functions
+/api/* 200
+
+# Static assets - serve as is
+/assets/* 200
+/uploads/* 200
+
+# All other routes - serve index.html for client-side routing
+/* /index.html 200
