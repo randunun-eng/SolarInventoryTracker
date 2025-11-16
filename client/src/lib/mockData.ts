@@ -136,28 +136,28 @@ export const mockStats = {
   totalSuppliers: mockSuppliers.length,
 };
 
-// Mock API handlers
+// Mock API handlers - Returns data in the same format as real API
 export function getMockData(endpoint: string): any {
   if (endpoint.includes('/api/components')) {
-    return mockComponents;
+    return mockComponents; // Components page expects array directly
   }
   if (endpoint.includes('/api/categories')) {
-    return mockCategories;
+    return mockCategories; // Categories expects array directly
   }
   if (endpoint.includes('/api/suppliers')) {
-    return mockSuppliers;
+    return mockSuppliers; // Suppliers expects array directly
   }
   if (endpoint.includes('/api/clients')) {
-    return mockClients;
+    return mockClients; // Clients expects array directly
   }
   if (endpoint.includes('/api/repairs')) {
-    return mockRepairs;
+    return mockRepairs; // Repairs expects array directly
   }
   if (endpoint.includes('/api/stats')) {
-    return mockStats;
+    return mockStats; // Stats expects object directly
   }
   if (endpoint.includes('/api/auth/me')) {
-    return { user: mockUsers[0] };
+    return { user: mockUsers[0] }; // Auth expects { user: {...} }
   }
 
   return null;

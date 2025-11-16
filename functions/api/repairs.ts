@@ -57,7 +57,7 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     if (status) {
       query += ' WHERE r.status = ?';
       const { results } = await env.DB.prepare(query).bind(status).all();
-      return new Response(JSON.stringify({ repairs: results }), {
+      return new Response(JSON.stringify(results), {
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }

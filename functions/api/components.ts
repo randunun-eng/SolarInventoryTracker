@@ -38,7 +38,7 @@ export async function onRequestGet(context: { request: Request; env: Env; params
       'SELECT * FROM components ORDER BY id DESC'
     ).all();
 
-    return new Response(JSON.stringify({ components: results }), {
+    return new Response(JSON.stringify(results), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   } catch (error: any) {
