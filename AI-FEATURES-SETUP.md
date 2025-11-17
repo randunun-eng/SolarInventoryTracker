@@ -6,8 +6,14 @@ Your Solar Inventory Tracker has **3 powerful AI features** powered by Cloudflar
 
 ### 1. **AI Chatbot** 🗨️
 - Interactive assistant in the bottom-right corner
-- Answers questions about inventory and repairs
-- Context-aware responses
+- **Real-time D1 database access** - knows your current inventory and repairs
+- Answers questions about:
+  - Current inventory levels and low stock items
+  - Repair job status and recent jobs
+  - Client information
+  - Solar components and systems
+- Voice input/output support
+- Context-aware responses with live data
 - Endpoint: `/api/ai-chat`
 
 ### 2. **Component Analysis** 🔍
@@ -39,7 +45,44 @@ Your Solar Inventory Tracker has **3 powerful AI features** powered by Cloudflar
 ✅ **AI Functions** - Already implemented in `/functions/api/`
 ✅ **AI Binding** - Configured in `wrangler.toml`
 ✅ **AI Model** - Using `@cf/meta/llama-3.1-8b-instruct`
+✅ **D1 Database Integration** - Chatbot has real-time database access
+✅ **Chatbot Endpoint** - Fixed and using Cloudflare AI with D1
 ⏳ **Dashboard Binding** - Needs configuration
+
+### Latest Updates (2025-11-17)
+
+🎉 **Chatbot Fixed!**
+- Switched from Google Gemini API to Cloudflare Workers AI
+- Added D1 database integration for real-time data
+- Chatbot now queries:
+  - Component inventory and stock levels
+  - Low stock alerts
+  - Repair job statuses
+  - Recent repairs and client information
+- Voice mode support maintained
+- No API keys required - uses Cloudflare Workers AI
+
+### Optional: Google Gemini API Integration
+
+If you want to use Google Gemini API as an alternative AI provider:
+
+1. **Get Gemini API Key:**
+   - Visit: https://makersuite.google.com/app/apikey
+   - Create a new API key
+   - Copy the key
+
+2. **Configure Environment Variable:**
+   ```bash
+   # Add to your .env or Cloudflare environment variables
+   GOOGLE_AI_API_KEY=your_gemini_api_key_here
+   ```
+
+3. **Use the Gemini Endpoint:**
+   - Endpoint: `/api/chat`
+   - The old Gemini endpoint is still available in `server/routes.ts`
+   - It provides similar functionality with Gemini-1.5-Pro model
+
+**Note:** The chatbot currently uses Cloudflare AI by default, which is free (10,000 requests/day) and doesn't require API keys. The Gemini integration is optional and mainly for users who want to use Google's AI models.
 
 ---
 
@@ -89,24 +132,24 @@ This means Cloudflare Pages will automatically bind Workers AI when you configur
 ### 1. Test AI Chatbot
 
 **From the Web UI:**
-1. Login to: https://production.solar-inventory-tracker.pages.dev
+1. Login to: https://eurovolt.store
 2. Look for chatbot icon in bottom-right corner
 3. Click to open chat
 4. Ask questions like:
-   - "How many components are low on stock?"
-   - "What repairs are in progress?"
-   - "Tell me about solar inverters"
+   - "How many components are low on stock?" - Gets real-time data from D1
+   - "What repairs are in progress?" - Queries current repair jobs
+   - "Tell me about solar inverters" - General knowledge
+   - "Show me recent repair jobs" - Gets latest repairs from database
+   - "Which items need restocking?" - Queries low stock components
 
 **Via API:**
 ```bash
-curl -X POST https://production.solar-inventory-tracker.pages.dev/api/ai-chat \
+curl -X POST https://eurovolt.store/api/ai-chat \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "What is a solar inverter?",
-    "context": {
-      "totalComponents": 10,
-      "lowStockComponents": 2
-    }
+    "message": "What components are low on stock?",
+    "sessionId": "test-session-123",
+    "isVoiceMode": false
   }'
 ```
 
@@ -114,10 +157,19 @@ curl -X POST https://production.solar-inventory-tracker.pages.dev/api/ai-chat \
 ```json
 {
   "success": true,
-  "response": "A solar inverter is a device that converts direct current (DC) electricity from solar panels into alternating current (AC) electricity...",
-  "model": "@cf/meta/llama-3.1-8b-instruct"
+  "response": "Based on the current inventory, you have 3 items that are low on stock:\n\n1. Solar Panel 400W: 5/10 units (Price: $250.00)\n2. Charge Controller MPPT: 2/8 units (Price: $180.00)\n3. Battery Bank 12V: 1/5 units (Price: $320.00)\n\nI recommend restocking these items soon to avoid delays in repairs.",
+  "model": "@cf/meta/llama-3.1-8b-instruct",
+  "sessionId": "test-session-123"
 }
 ```
+
+**NEW: Real-time Database Context**
+The chatbot now automatically includes:
+- Total components and stock levels
+- Low stock alerts with specific items
+- Repair statistics (total, in progress, completed)
+- Recent repair jobs with details
+- Client count and information
 
 ### 2. Test Component Analysis
 

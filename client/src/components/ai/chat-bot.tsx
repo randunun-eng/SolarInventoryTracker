@@ -78,8 +78,8 @@ export function ChatBot() {
     setIsLoading(true);
     
     try {
-      // Use proper fetch API with correct URL and method properties
-      const response = await fetch('/api/chat', {
+      // Use Cloudflare AI endpoint with D1 database access
+      const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,11 +90,11 @@ export function ChatBot() {
           isVoiceMode: voiceMode,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       
       setMessages((prevMessages) => [
