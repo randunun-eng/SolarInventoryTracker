@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, type Content, type Part, GenerativeModel } from '@google/generative-ai';
 import { Request, Response } from 'express';
 import { storage } from './storage';
+import { CloudflareAI } from './cloudflare-ai';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -124,12 +125,58 @@ For actions that modify data, always ask for confirmation.
   }
 };
 
+// Helper to get context as plain object for Cloudflare AI
+const getSystemContextData = async () => {
+  try {
+    const components = await storage.getComponents();
+    const repairs = await storage.getRepairs();
+    const activeRepairs = await storage.getActiveRepairs();
+    const lowStockComponents = await storage.getLowStockComponents();
+    const clients = await storage.getClients();
+    const faultTypes = await storage.getFaultTypes();
+
+    return {
+      totalComponents: components.length,
+      lowStockCount: lowStockComponents.length,
+      totalRepairs: repairs.length,
+      activeRepairs: activeRepairs.length,
+      totalClients: clients.length,
+      totalFaultTypes: faultTypes.length,
+      components: components.map(c => ({
+        name: c.name,
+        stock: c.currentStock,
+        minStock: c.minimumStock
+      })),
+      repairs: repairs.map(r => ({
+        id: r.id,
+        model: r.inverterModel,
+        status: r.status,
+        priority: r.priority
+      }))
+    };
+  } catch (error) {
+    console.error('Error getting system context data:', error);
+    return {
+      totalComponents: 0,
+      lowStockCount: 0,
+      totalRepairs: 0,
+      activeRepairs: 0
+    };
+  }
+};
+
 // Process user query to determine intent and entities
 const processQuery = async (chatHistory: Content[], query: string) => {
-  // If no model is available, return a graceful error message
+  // If no model is available, use Cloudflare AI as fallback
   if (!model) {
-    console.error('AI model not available. API key might be missing or invalid.');
-    return 'I\'m sorry, but the AI service is currently unavailable. Please check your API key configuration.';
+    console.log('Google AI model not available, using Cloudflare AI fallback');
+    try {
+      const context = await getSystemContextData();
+      return await CloudflareAI.chat(query, context);
+    } catch (error) {
+      console.error('Cloudflare AI fallback also failed:', error);
+      return 'I\'m sorry, but I\'m having trouble connecting to the AI service. Please try again in a moment.';
+    }
   }
   
   const systemContext = await getSystemContext();
@@ -147,8 +194,16 @@ const processQuery = async (chatHistory: Content[], query: string) => {
     const result = await chat.sendMessage(systemContext + '\n\nUser question: ' + query);
     return result.response.text();
   } catch (error) {
-    console.error('Error processing chat query:', error);
-    return 'Sorry, I encountered an error processing your question. Please try again with a different question or check the API key configuration.';
+    console.error('Error processing chat query with Google AI, trying Cloudflare AI fallback:', error);
+
+    // Try Cloudflare AI as fallback
+    try {
+      const context = await getSystemContextData();
+      return await CloudflareAI.chat(query, context);
+    } catch (fallbackError) {
+      console.error('Cloudflare AI fallback also failed:', fallbackError);
+      return 'Sorry, I encountered an error processing your question. Please try again in a moment.';
+    }
   }
 };
 
@@ -583,10 +638,16 @@ const processVoiceCommand = async (chatHistory: Content[], command: string) => {
     }
   }
   
-  // If no model is available or if we hit an API limitation, return a helpful response
+  // If no model is available, use Cloudflare AI as fallback
   if (!model) {
-    console.log('AI model not available for voice command. Providing database-backed response.');
-    return 'I can help with basic inventory and repair questions without the AI service. Try asking about specific components, low stock items, or active repairs.';
+    console.log('Google AI model not available for voice command, using Cloudflare AI fallback');
+    try {
+      const inventory = await storage.getComponents();
+      return await CloudflareAI.voice(command, inventory);
+    } catch (error) {
+      console.error('Cloudflare AI fallback also failed for voice command:', error);
+      return 'I can help with basic inventory and repair questions. Try asking about specific components, low stock items, or active repairs.';
+    }
   }
   
   const systemContext = `
@@ -621,14 +682,16 @@ For most requests about the system, give one concise, informative answer.
     const result = await chat.sendMessage(systemContext + '\n\nUser voice command: ' + command);
     return result.response.text();
   } catch (error) {
-    console.error('Error processing voice command:', error);
-    
-    // If we hit API quota limits, return a more helpful message
-    if (error.message && error.message.includes('quota')) {
-      return 'I\'m sorry, but the AI service has reached its quota limit. I can still help with basic inventory and repair questions. Try asking about specific components, low stock items, or active repairs.';
+    console.error('Error processing voice command with Google AI, trying Cloudflare AI fallback:', error);
+
+    // Try Cloudflare AI as fallback
+    try {
+      const inventory = await storage.getComponents();
+      return await CloudflareAI.voice(command, inventory);
+    } catch (fallbackError) {
+      console.error('Cloudflare AI fallback also failed for voice command:', fallbackError);
+      return 'I can still help with basic questions. Try asking about specific components, low stock items, or active repairs.';
     }
-    
-    return 'I can still help with basic questions even without the AI service. Try asking about specific components, low stock items, or active repairs.';
   }
 };
 
