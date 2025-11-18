@@ -27,6 +27,7 @@ export interface IStorage {
   getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: InsertCategory): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<{success: boolean, affectedComponents?: number}>;
   
   // Supplier management
   getSuppliers(): Promise<Supplier[]>;
@@ -224,12 +225,36 @@ export class MemStorage implements IStorage {
   async updateCategory(id: number, category: InsertCategory): Promise<Category | undefined> {
     const existingCategory = this.categories.get(id);
     if (!existingCategory) return undefined;
-    
+
     const updatedCategory: Category = { ...existingCategory, ...category };
     this.categories.set(id, updatedCategory);
     return updatedCategory;
   }
-  
+
+  async deleteCategory(id: number): Promise<{success: boolean, affectedComponents?: number}> {
+    // Check if category exists
+    if (!this.categories.has(id)) {
+      return { success: false };
+    }
+
+    // Update all components that reference this category
+    let affectedCount = 0;
+    this.components.forEach((component, componentId) => {
+      if (component.categoryId === id) {
+        this.components.set(componentId, { ...component, categoryId: null });
+        affectedCount++;
+      }
+    });
+
+    // Delete the category
+    const deleted = this.categories.delete(id);
+
+    return {
+      success: deleted,
+      affectedComponents: affectedCount
+    };
+  }
+
   // Supplier Management
   async getSuppliers(): Promise<Supplier[]> {
     return Array.from(this.suppliers.values());
@@ -761,6 +786,32 @@ class DatabaseStorageClass implements IStorage {
       .where(eq(categories.id, id))
       .returning();
     return updatedCategory;
+  }
+
+  async deleteCategory(id: number): Promise<{success: boolean, affectedComponents?: number}> {
+    // First, check if the category exists
+    const category = await this.getCategory(id);
+    if (!category) {
+      return { success: false };
+    }
+
+    // Update all components that reference this category to set categoryId to null
+    const affectedComponents = await db
+      .update(components)
+      .set({ categoryId: null })
+      .where(eq(components.categoryId, id))
+      .returning();
+
+    // Delete the category
+    const result = await db
+      .delete(categories)
+      .where(eq(categories.id, id))
+      .returning();
+
+    return {
+      success: result.length > 0,
+      affectedComponents: affectedComponents.length
+    };
   }
 
   // Supplier Management
