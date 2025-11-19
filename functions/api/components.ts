@@ -3,9 +3,12 @@
  * CRUD operations for electronic components
  */
 
+import { verifySession, hasRole, unauthorizedResponse, forbiddenResponse } from './_auth';
+
 interface Env {
   DB: D1Database;
   AI: any;
+  SESSIONS: KVNamespace;
 }
 
 // GET all components or a specific component by ID
@@ -49,9 +52,20 @@ export async function onRequestGet(context: { request: Request; env: Env; params
   }
 }
 
-// POST - Create a new component
+// POST - Create a new component (Admin only)
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Verify authentication
+  const auth = await verifySession(request, env.SESSIONS);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  // Check if user has Admin role
+  if (!hasRole(auth.user, ['Admin'])) {
+    return forbiddenResponse('Only administrators can create components');
+  }
 
   try {
     const data = await request.json();
@@ -114,9 +128,20 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   }
 }
 
-// PUT - Update a component
+// PUT - Update a component (Admin only)
 export async function onRequestPut(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Verify authentication
+  const auth = await verifySession(request, env.SESSIONS);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  // Check if user has Admin role
+  if (!hasRole(auth.user, ['Admin'])) {
+    return forbiddenResponse('Only administrators can update components');
+  }
 
   try {
     const data = await request.json();
@@ -153,9 +178,21 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
   }
 }
 
-// DELETE - Delete a component
+// DELETE - Delete a component (Admin only)
 export async function onRequestDelete(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Verify authentication
+  const auth = await verifySession(request, env.SESSIONS);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  // Check if user has Admin role
+  if (!hasRole(auth.user, ['Admin'])) {
+    return forbiddenResponse('Only administrators can delete components');
+  }
+
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
 
@@ -189,7 +226,9 @@ export async function onRequestOptions() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '86400',
     },
   });
 }

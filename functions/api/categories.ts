@@ -3,8 +3,11 @@
  * CRUD operations for component categories
  */
 
+import { verifySession, hasRole, unauthorizedResponse, forbiddenResponse } from './_auth';
+
 interface Env {
   DB: D1Database;
+  SESSIONS: KVNamespace;
 }
 
 // GET all categories or a specific category by ID
@@ -54,9 +57,20 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
   }
 }
 
-// POST - Create a new category
+// POST - Create a new category (Admin only)
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Verify authentication
+  const auth = await verifySession(request, env.SESSIONS);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  // Check if user has Admin role
+  if (!hasRole(auth.user, ['Admin'])) {
+    return forbiddenResponse('Only administrators can create categories');
+  }
 
   try {
     const data = await request.json();
@@ -123,9 +137,20 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
   }
 }
 
-// PUT - Update a category
+// PUT - Update a category (Admin only)
 export async function onRequestPut(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Verify authentication
+  const auth = await verifySession(request, env.SESSIONS);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  // Check if user has Admin role
+  if (!hasRole(auth.user, ['Admin'])) {
+    return forbiddenResponse('Only administrators can update categories');
+  }
 
   try {
     const url = new URL(request.url);
@@ -217,9 +242,20 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
   }
 }
 
-// DELETE - Delete a category
+// DELETE - Delete a category (Admin only)
 export async function onRequestDelete(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Verify authentication
+  const auth = await verifySession(request, env.SESSIONS);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error);
+  }
+
+  // Check if user has Admin role
+  if (!hasRole(auth.user, ['Admin'])) {
+    return forbiddenResponse('Only administrators can delete categories');
+  }
 
   try {
     const url = new URL(request.url);
@@ -289,7 +325,8 @@ export async function onRequestOptions() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie',
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Max-Age': '86400',
     },
   });
