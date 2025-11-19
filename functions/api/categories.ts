@@ -87,12 +87,18 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // Insert new category
     const result = await env.DB.prepare(
-      'INSERT INTO categories (name, description) VALUES (?, ?) RETURNING *'
+      'INSERT INTO categories (name, description) VALUES (?, ?)'
     )
       .bind(name.trim(), description || null)
-      .first();
+      .run();
 
-    return new Response(JSON.stringify(result), {
+    const newCategory = {
+      id: result.meta.last_row_id,
+      name: name.trim(),
+      description: description || null,
+    };
+
+    return new Response(JSON.stringify(newCategory), {
       status: 201,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
@@ -175,13 +181,19 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
     }
 
     // Update category
-    const updated = await env.DB.prepare(
-      'UPDATE categories SET name = ?, description = ? WHERE id = ? RETURNING *'
+    await env.DB.prepare(
+      'UPDATE categories SET name = ?, description = ? WHERE id = ?'
     )
       .bind(name.trim(), description || null, id)
-      .first();
+      .run();
 
-    return new Response(JSON.stringify(updated), {
+    const updatedCategory = {
+      id: parseInt(id),
+      name: name.trim(),
+      description: description || null,
+    };
+
+    return new Response(JSON.stringify(updatedCategory), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   } catch (error: any) {
