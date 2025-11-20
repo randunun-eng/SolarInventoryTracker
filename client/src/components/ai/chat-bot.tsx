@@ -14,11 +14,11 @@ import { Loader2, Send, MessageSquare, X, Mic, VolumeX, Volume2 } from 'lucide-r
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useVoiceFeatures } from './useVoiceFeatures';
-import { 
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger 
+  TooltipTrigger
 } from '@/components/ui/tooltip';
 
 interface Message {
@@ -45,7 +45,7 @@ export function ChatBot() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  
+
   // Initialize voice features
   const {
     isListening,
@@ -60,26 +60,26 @@ export function ChatBot() {
   // Define handleSendMessage early with useCallback
   const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || isLoading) return;
-    
+
     // If we're listening, stop listening first
     if (isListening) {
       stopListening();
     }
-    
+
     const userMessage: Message = {
       id: Math.random().toString(36).substring(2, 15),
       content: inputValue,
       type: 'user',
       timestamp: new Date(),
     };
-    
+
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setInputValue('');
     setIsLoading(true);
-    
+
     try {
       // Use proper fetch API with correct URL and method properties
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,13 +90,13 @@ export function ChatBot() {
           isVoiceMode: voiceMode,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      
+
       setMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -113,7 +113,7 @@ export function ChatBot() {
         description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
-      
+
       setMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -144,30 +144,30 @@ export function ChatBot() {
   // Track last speech timestamp for auto-submission
   const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState<number>(0);
   const autoSubmitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Function to check for command keywords
   const checkForCommandKeywords = (text: string): boolean => {
     const submitKeywords = [
-      "submit", 
-      "send", 
-      "go ahead", 
-      "execute", 
-      "process that", 
-      "done speaking", 
+      "submit",
+      "send",
+      "go ahead",
+      "execute",
+      "process that",
+      "done speaking",
       "that's all"
     ];
-    
+
     const lowercaseText = text.toLowerCase();
     return submitKeywords.some(keyword => lowercaseText.includes(keyword));
   };
-  
+
   // Auto-submit after a pause in speech
   const setupAutoSubmitTimeout = () => {
     // Clear any existing timeout
     if (autoSubmitTimeoutRef.current) {
       clearTimeout(autoSubmitTimeoutRef.current);
     }
-    
+
     // Set new timeout - will submit if no new speech after 2.5 seconds
     autoSubmitTimeoutRef.current = setTimeout(() => {
       if (isListening && inputValue.trim().length > 10) {
@@ -177,16 +177,16 @@ export function ChatBot() {
       }
     }, 2500);
   };
-  
+
   // Effect to handle speech transcript updates - update input value and check for auto-submit
   useEffect(() => {
     if (transcript && isListening) {
       console.log('Updating input value with transcript:', transcript);
       setInputValue(transcript);
-      
+
       // Update speech timestamp
       setLastSpeechTimestamp(Date.now());
-      
+
       // Check for command keywords that trigger immediate submission
       if (checkForCommandKeywords(transcript)) {
         console.log('Command keyword detected, auto-submitting message');
@@ -195,12 +195,12 @@ export function ChatBot() {
         setTimeout(() => handleSendMessage(), 300);
         return;
       }
-      
+
       // Set up auto-submit timeout
       setupAutoSubmitTimeout();
     }
   }, [transcript, isListening]);
-  
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -216,19 +216,19 @@ export function ChatBot() {
   // Effect to handle speaking of assistant responses
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    
+
     // Only speak if:
     // 1. Voice mode is on
     // 2. The message is from the assistant
     // 3. Not currently loading or speaking
     // 4. The message hasn't been spoken before
-    if (voiceMode && 
-        lastMessage && 
-        lastMessage.type === 'assistant' && 
-        !isLoading && 
-        !isSpeaking && 
-        !spokenMessageIds.has(lastMessage.id)) {
-      
+    if (voiceMode &&
+      lastMessage &&
+      lastMessage.type === 'assistant' &&
+      !isLoading &&
+      !isSpeaking &&
+      !spokenMessageIds.has(lastMessage.id)) {
+
       // Mark this message as being spoken
       setIsSpeaking(true);
       setSpokenMessageIds(prev => {
@@ -236,27 +236,27 @@ export function ChatBot() {
         newSet.add(lastMessage.id);
         return newSet;
       });
-      
+
       // Clean the text for speech (remove any markdown or special characters)
       const cleanText = lastMessage.content.replace(/\*\*(.*?)\*\*/g, '$1')
-                                          .replace(/\*(.*?)\*/g, '$1');
-      
+        .replace(/\*(.*?)\*/g, '$1');
+
       console.log('Speaking message from chat-bot:', cleanText);
-      
+
       // Use only the direct speech method for better reliability
       if (window.speechSynthesis) {
         try {
           // Cancel any ongoing speech first
           window.speechSynthesis.cancel();
-          
+
           // Create a new utterance
           const utterance = new SpeechSynthesisUtterance(cleanText);
-          
+
           // Set properties
           utterance.volume = 1;
           utterance.rate = 1;
           utterance.pitch = 1;
-          
+
           // Add event listeners
           utterance.onstart = () => console.log('Direct speech started in chat-bot');
           utterance.onend = () => {
@@ -267,7 +267,7 @@ export function ChatBot() {
             console.error('Direct speech error in chat-bot:', e);
             setIsSpeaking(false);
           };
-          
+
           // Speak the text
           window.speechSynthesis.speak(utterance);
         } catch (error) {
@@ -279,14 +279,14 @@ export function ChatBot() {
         console.error('Speech synthesis not supported');
         setIsSpeaking(false);
       }
-      
+
       // Set a fallback timeout in case speech events don't fire properly
       const timeoutDuration = Math.max(5000, cleanText.length * 100);
       const timeout = setTimeout(() => {
         console.log('Fallback timeout for speech ended');
         setIsSpeaking(false);
       }, timeoutDuration);
-      
+
       return () => clearTimeout(timeout);
     }
   }, [messages, voiceMode, isLoading, isSpeaking, spokenMessageIds]);
@@ -312,10 +312,10 @@ export function ChatBot() {
     } else {
       // Clear any existing input before starting to listen
       setInputValue('');
-      
+
       // Start listening but don't auto-submit
       startListening();
-      
+
       toast({
         title: "Voice input active",
         description: "Speak clearly. Press the mic button again to submit.",
@@ -346,16 +346,16 @@ export function ChatBot() {
   const formatMessage = (content: string) => {
     // Convert markdown-like syntax to HTML
     let formattedContent = content;
-    
+
     // Handle bold text: **text** -> <strong>text</strong>
     formattedContent = formattedContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
+
     // Handle italic text: *text* -> <em>text</em>
     formattedContent = formattedContent.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
+
     // Handle line breaks: \n -> <br />
     formattedContent = formattedContent.replace(/\n/g, '<br />');
-    
+
     return formattedContent;
   };
 
@@ -381,24 +381,22 @@ export function ChatBot() {
               </Button>
             </div>
           </SheetHeader>
-          
+
           <ScrollArea className="flex-1 px-4 py-2">
             <div className="flex flex-col gap-3">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${
-                    message.type === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
                 >
                   <div
-                    className={`max-w-[85%] px-4 py-2 rounded-lg ${
-                      message.type === 'user'
+                    className={`max-w-[85%] px-4 py-2 rounded-lg ${message.type === 'user'
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted'
-                    }`}
+                      }`}
                   >
-                    <div 
+                    <div
                       dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
                       className="whitespace-pre-wrap break-words"
                     />
@@ -415,7 +413,7 @@ export function ChatBot() {
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
-          
+
           <SheetFooter className="flex flex-col gap-2 p-4 border-t mt-auto">
             {/* Voice mode controls */}
             <div className="flex justify-between w-full items-center mb-2">
@@ -438,20 +436,20 @@ export function ChatBot() {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                
+
                 {!synthesisSupported && (
                   <span className="text-xs text-muted-foreground">
                     Voice output not supported in this browser
                   </span>
                 )}
               </div>
-              
+
               {/* Voice status indicator */}
               {isSpeaking && (
                 <span className="text-xs text-primary animate-pulse">Speaking...</span>
               )}
             </div>
-            
+
             {/* Input area */}
             <div className="flex gap-2 w-full">
               <Input
@@ -462,7 +460,7 @@ export function ChatBot() {
                 disabled={isLoading || isListening}
                 className="flex-1"
               />
-              
+
               {/* Voice input button */}
               {recognitionSupported && (
                 <TooltipProvider>
@@ -484,7 +482,7 @@ export function ChatBot() {
                   </Tooltip>
                 </TooltipProvider>
               )}
-              
+
               {/* Send button */}
               <Button
                 size="icon"
@@ -498,14 +496,14 @@ export function ChatBot() {
                 )}
               </Button>
             </div>
-            
+
             {/* Listening status */}
             {isListening && (
               <div className="text-xs text-primary-foreground bg-primary px-2 py-1 rounded mt-1 animate-pulse">
                 Listening... Say your message clearly. Press the microphone button again to submit.
               </div>
             )}
-            
+
             {/* Browser support warning */}
             {!recognitionSupported && (
               <div className="text-xs text-muted-foreground mt-1">
