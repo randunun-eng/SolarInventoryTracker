@@ -1,13 +1,5 @@
--- Seed data: Create default admin user
--- Default credentials: admin / admin123
--- IMPORTANT: Change the password after first login!
-
-INSERT OR IGNORE INTO users (username, password, name, role)
-VALUES ('admin', 'admin123', 'Administrator', 'Admin');
-
--- Create a test technician user
-INSERT OR IGNORE INTO users (username, password, name, role)
-VALUES ('tech1', 'tech123', 'Test Technician', 'Technician');
+-- Seed data for categories and fault types
+-- User seeding is now handled by server/seed.ts with proper password hashing
 
 -- Add some sample categories
 INSERT OR IGNORE INTO categories (name, description)

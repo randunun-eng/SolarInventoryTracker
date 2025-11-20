@@ -1,11 +1,11 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, doublePrecision, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Categories for components
-export const categories = sqliteTable("categories", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
 });
@@ -19,8 +19,8 @@ export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 
 // Suppliers
-export const suppliers = sqliteTable("suppliers", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   contactName: text("contact_name"),
   email: text("email"),
@@ -28,7 +28,7 @@ export const suppliers = sqliteTable("suppliers", {
   address: text("address"),
   website: text("website"),
   remarks: text("remarks"),
-  tags: text("tags", { mode: "json" }).$type<string[]>(),  // JSON array stored as text
+  tags: text("tags").array(),  // Add tags as an array of strings for better categorization
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).pick({
@@ -45,8 +45,8 @@ export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
 export type Supplier = typeof suppliers.$inferSelect;
 
 // Electronic Components
-export const components = sqliteTable("components", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const components = pgTable("components", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   partNumber: text("part_number"),
   categoryId: integer("category_id"),
@@ -56,9 +56,9 @@ export const components = sqliteTable("components", {
   location: text("location"),
   minimumStock: integer("minimum_stock").default(10),
   currentStock: integer("current_stock").default(0),
-  supplierPrice: real("supplier_price").default(0),
+  supplierPrice: doublePrecision("supplier_price").default(0),
   supplierId: integer("supplier_id"),
-  lastPurchaseDate: text("last_purchase_date"),
+  lastPurchaseDate: timestamp("last_purchase_date"),
 });
 
 export const insertComponentSchema = createInsertSchema(components).pick({
@@ -80,13 +80,13 @@ export type InsertComponent = z.infer<typeof insertComponentSchema>;
 export type Component = typeof components.$inferSelect;
 
 // Purchase History
-export const purchases = sqliteTable("purchases", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const purchases = pgTable("purchases", {
+  id: serial("id").primaryKey(),
   componentId: integer("component_id").notNull(),
   supplierId: integer("supplier_id").notNull(),
   quantity: integer("quantity").notNull(),
-  unitPrice: real("unit_price").notNull(),
-  date: text("date").notNull(),
+  unitPrice: doublePrecision("unit_price").notNull(),
+  date: timestamp("date").notNull(),
 });
 
 export const insertPurchaseSchema = createInsertSchema(purchases).pick({
@@ -101,8 +101,8 @@ export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
 export type Purchase = typeof purchases.$inferSelect;
 
 // Clients
-export const clients = sqliteTable("clients", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
@@ -120,13 +120,13 @@ export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;
 
 // Inverters
-export const inverters = sqliteTable("inverters", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const inverters = pgTable("inverters", {
+  id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull(),
   model: text("model").notNull(),
   serialNumber: text("serial_number").notNull().unique(),
   warrantyStatus: text("warranty_status").default("Valid"),
-  installationDate: text("installation_date"),
+  installationDate: timestamp("installation_date"),
 });
 
 export const insertInverterSchema = createInsertSchema(inverters).pick({
@@ -141,8 +141,8 @@ export type InsertInverter = z.infer<typeof insertInverterSchema>;
 export type Inverter = typeof inverters.$inferSelect;
 
 // Common Fault Types
-export const faultTypes = sqliteTable("fault_types", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const faultTypes = pgTable("fault_types", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
 });
@@ -180,29 +180,35 @@ export const statusHistoryEntrySchema = z.object({
 export type StatusHistoryEntry = z.infer<typeof statusHistoryEntrySchema>;
 
 // Repair Logs
-export const repairs = sqliteTable("repairs", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const repairs = pgTable("repairs", {
+  id: serial("id").primaryKey(),
   inverterId: integer("inverter_id"),
   clientId: integer("client_id").notNull(),
   faultTypeId: integer("fault_type_id"),
   faultDescription: text("fault_description"),
   status: text("status").default("Received"),
-  receivedDate: text("received_date").notNull(),
-  estimatedCompletionDate: text("estimated_completion_date"),
-  completionDate: text("completion_date"),
-  laborHours: real("labor_hours").default(0),
-  laborRate: real("labor_rate").default(85),
+  receivedDate: timestamp("received_date").notNull(),
+  estimatedCompletionDate: timestamp("estimated_completion_date"),
+  completionDate: timestamp("completion_date"),
+  laborHours: doublePrecision("labor_hours").default(0),
+  laborRate: doublePrecision("labor_rate").default(85),
   technicianName: text("technician_name"),
   technicianNotes: text("technician_notes"),
-  beforePhotos: text("before_photos", { mode: "json" }).$type<string[]>().default([]),
-  afterPhotos: text("after_photos", { mode: "json" }).$type<string[]>().default([]),
-  totalPartsCost: real("total_parts_cost").default(0),
-  totalCost: real("total_cost").default(0),
+  beforePhotos: text("before_photos").array(),
+  afterPhotos: text("after_photos").array(),
+  // Temporarily commented out until database column is created
+  // repairPhotos: text("repair_photos").array().default([]),
+  totalPartsCost: doublePrecision("total_parts_cost").default(0),
+  totalCost: doublePrecision("total_cost").default(0),
+  // Added fields for inverter model and serial number
   inverterModel: text("inverter_model"),
   inverterSerialNumber: text("inverter_serial_number"),
-  statusHistory: text("status_history", { mode: "json" }).$type<any[]>().default([]),
+  // Added field to store status history
+  statusHistory: jsonb("status_history").array().default([]),
+  // New fields for remarks and priority
   remarks: text("remarks"),
   priority: text("priority").default("Medium"),
+  // Tracking token for customer-facing repair status page
   trackingToken: text("tracking_token").unique(),
 });
 
@@ -221,6 +227,7 @@ export const insertRepairSchema = createInsertSchema(repairs).pick({
   technicianNotes: true,
   beforePhotos: true,
   afterPhotos: true,
+  // repairPhotos: true,
   totalPartsCost: true,
   totalCost: true,
   inverterModel: true,
@@ -234,12 +241,12 @@ export type InsertRepair = z.infer<typeof insertRepairSchema>;
 export type Repair = typeof repairs.$inferSelect;
 
 // Used Components in Repairs (Many-to-Many)
-export const usedComponents = sqliteTable("used_components", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const usedComponents = pgTable("used_components", {
+  id: serial("id").primaryKey(),
   repairId: integer("repair_id").notNull(),
   componentId: integer("component_id").notNull(),
   quantity: integer("quantity").notNull(),
-  unitPrice: real("unit_price").notNull(),
+  unitPrice: doublePrecision("unit_price").notNull(),
 });
 
 export const insertUsedComponentSchema = createInsertSchema(usedComponents).pick({
@@ -253,8 +260,8 @@ export type InsertUsedComponent = z.infer<typeof insertUsedComponentSchema>;
 export type UsedComponent = typeof usedComponents.$inferSelect;
 
 // Users (for authentication/authorization)
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name"),
@@ -295,10 +302,10 @@ export const componentsRelations = relations(components, ({ one, many }) => ({
 }));
 
 // Settings table for application-wide configuration
-export const settings = sqliteTable("settings", {
+export const settings = pgTable("settings", {
   key: text("key").primaryKey(),
-  value: text("value", { mode: "json" }).notNull(),
-  updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).pick({
@@ -344,7 +351,7 @@ export const repairsRelations = relations(repairs, ({ one, many }) => ({
   }),
   inverter: one(inverters, {
     fields: [repairs.inverterId],
-    references: [repairs.id],
+    references: [inverters.id],
   }),
   faultType: one(faultTypes, {
     fields: [repairs.faultTypeId],

@@ -10,3 +10,5 @@ dist/
 .wrangler/
 client/.env
 !client/.env.production.local
+local.db
+*.db

@@ -3,6 +3,8 @@ import session from "express-session";
 import passport from "./auth";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeDatabase } from "./db";
+import { seedDatabase } from "./seed";
 
 const app = express();
 
@@ -60,6 +62,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database before starting server
+  await initializeDatabase();
+
+  // Seed database with initial data
+  await seedDatabase();
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
