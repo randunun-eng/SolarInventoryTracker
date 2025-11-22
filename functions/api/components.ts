@@ -1,16 +1,27 @@
 /**
  * Cloudflare Pages Function - Components API with D1 Database
  * CRUD operations for electronic components
+ * Authorization: Admin role required for write operations
  */
+
+import { requireAuth, requireAdmin } from '../_middleware/auth';
 
 interface Env {
   DB: D1Database;
   AI: any;
+  SESSIONS: KVNamespace;
 }
 
 // GET all components or a specific component by ID
 export async function onRequestGet(context: { request: Request; env: Env; params: any }) {
   const { request, env, params } = context;
+
+  // Require authentication
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
 
@@ -52,6 +63,12 @@ export async function onRequestGet(context: { request: Request; env: Env; params
 // POST - Create a new component
 export async function onRequestPost(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Require Admin role for creating components
+  const authResult = await requireAdmin(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
 
   try {
     const data = await request.json();
@@ -118,6 +135,12 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 export async function onRequestPut(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
+  // Require Admin role for updating components
+  const authResult = await requireAdmin(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const data = await request.json();
     const { id, ...updates } = data;
@@ -156,6 +179,13 @@ export async function onRequestPut(context: { request: Request; env: Env }) {
 // DELETE - Delete a component
 export async function onRequestDelete(context: { request: Request; env: Env }) {
   const { request, env } = context;
+
+  // Require Admin role for deleting components
+  const authResult = await requireAdmin(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
 
